@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "useGulp": false,
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.22.1",
+    "sdksVersions": {},
+    "version": "1.23.2",
+    "libraryName": "nbc",
+    "libraryId": "c40a927e-320e-4a55-aa0d-06411c60f1a0",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "NBC",
+    "solutionShortDescription": "NBC description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

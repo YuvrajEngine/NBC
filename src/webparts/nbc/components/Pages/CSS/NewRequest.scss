@@ -1,0 +1,339 @@
+// ─────────────────────────────────────────────────────────────
+// MAIN PAGE LAYOUT
+// ─────────────────────────────────────────────────────────────
+
+.req-wrapper {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// ─────────────────────────────────────────────────────────────
+// SIDEBAR
+// ─────────────────────────────────────────────────────────────
+
+.req-sidebar {
+  width: 220px;
+  background: #14335e;
+  flex-shrink: 0;
+  transition: width 0.3s ease;
+
+  &.close {
+    width: 48px;
+  }
+
+  .menu-icon {
+    padding: 16px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 18px;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAIN CONTENT
+// ─────────────────────────────────────────────────────────────
+
+.req-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: #f5f6fa;
+}
+
+// ─────────────────────────────────────────────────────────────
+// HEADER
+// ─────────────────────────────────────────────────────────────
+
+.req-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  min-height: 64px;
+  box-sizing: border-box;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
+
+  .company-logo img {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #444;
+    }
+
+    .user-icon img {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #dcdcdc;
+      display: block;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// BODY
+// ─────────────────────────────────────────────────────────────
+
+.req-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-header .page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #14335e;
+}
+
+// ─────────────────────────────────────────────────────────────
+// FORM CARD
+// ─────────────────────────────────────────────────────────────
+
+.form-container {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION HEADINGS
+// ─────────────────────────────────────────────────────────────
+
+.section-heading {
+  font-size: 15px;
+  font-weight: 600;
+
+  color: #ffffff;
+  background: #14335e;
+
+  padding: 8px 14px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+
+  &.black-heading {
+    background: #14335e;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// REQUESTOR DETAILS GRID
+// ─────────────────────────────────────────────────────────────
+
+.requestor-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 20px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// CHANGE REQUEST DETAILS GRID
+// ─────────────────────────────────────────────────────────────
+
+.basic-po-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 20px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// FIELD STYLING
+// ─────────────────────────────────────────────────────────────
+
+.requestor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  &.col-span-2 {
+    grid-column: span 2;
+  }
+
+  &.field-empty {
+    visibility: hidden;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #000000;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  input,
+  select,
+  textarea {
+    height: 36px;
+    padding: 0 10px;
+
+    border: 1px solid #d0d5dd;
+    border-radius: 5px;
+
+    font-size: 13px;
+    color: #333;
+    background: #ffffff;
+
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: #14335e;
+      box-shadow: 0 0 0 2px rgba(20, 51, 94, 0.1);
+    }
+
+    &:disabled {
+      background: #f0f2f5;
+      color: #666;
+      cursor: not-allowed;
+    }
+  }
+
+  textarea {
+    height: 80px;
+    padding: 8px 10px;
+    resize: none;
+  }
+
+  .remarks-textarea {
+    height: 56px;
+  }
+}
+
+.highlight-box {
+  height: 36px;
+  border: 1px solid #16a34a;
+  border-radius: 4px;
+}
+
+.file-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  input {
+    flex: 1;
+  }
+
+  svg {
+    color: #667085;
+    font-size: 16px;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// BOTTOM ACTION BUTTONS
+// ─────────────────────────────────────────────────────────────
+
+.bottom-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  gap: 12px;
+  padding: 4px 0 8px;
+
+  flex-wrap: wrap;
+}
+
+.draft-btn,
+.submit-btn-new,
+.exit-btn {
+  height: 38px;
+  min-width: 130px;
+  padding: 0 20px;
+
+  border: none;
+  border-radius: 5px;
+
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  cursor: pointer;
+
+  transition: background 0.2s, opacity 0.2s, transform 0.1s;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  &:not(:disabled):active {
+    transform: translateY(1px);
+  }
+}
+
+.draft-btn {
+  background-color: #0078d4;
+  color: #ffffff;
+
+  &:not(:disabled):hover {
+    background-color: #006cbf;
+  }
+}
+
+.submit-btn-new {
+  background-color: #107c10;
+  color: #ffffff;
+
+  &:not(:disabled):hover {
+    background-color: #0a6a0a;
+  }
+}
+
+.exit-btn {
+  background-color: #d32f2f;
+  color: #ffffff;
+
+  &:not(:disabled):hover {
+    background-color: #b71c1c;
+  }
+}
+

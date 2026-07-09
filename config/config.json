@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "nbc-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/nbc/NbcWebPart.js",
+          "manifest": "./src/webparts/nbc/NbcWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "NbcWebPartStrings": "lib/webparts/nbc/loc/{locale}.js"
+  }
+}
