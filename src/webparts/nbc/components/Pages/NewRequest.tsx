@@ -13,15 +13,11 @@ import ChangeRequestOps, {
 import SPCRUDOPS from "../../services/DAL/spcrudops";
 import "./CSS/NewRequest.scss";
 
-const DOCS_LIBRARY = "NBCDocs";
-
-const NewRequest: React.FC<INbcProps> = (props) => {
+  const DOCS_LIBRARY = "NBCDocs";
+  const NewRequest: React.FC<INbcProps> = (props) => {
   const history = useHistory();
-
   const employeeMasterOps = React.useMemo(() => EmployeeMasterOps(), []);
   const changeRequestOps = React.useMemo(() => ChangeRequestOps(), []);
-
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isRequestorValid, setIsRequestorValid] = React.useState(true);
@@ -49,9 +45,6 @@ const NewRequest: React.FC<INbcProps> = (props) => {
   });
 
   const [supportingFiles, setSupportingFiles] = React.useState<File[]>([]);
-
-  const toggleSidebar = (): void => setIsSidebarOpen((prev) => !prev);
-
   const getEmployeeDetails = async (): Promise<void> => {
     setIsLoading(true);
 
@@ -375,10 +368,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
                 label="Requested By"
                 value={employeeData.EmployeeName}
               />
-              <ReadOnlyField
-                label="Email"
-                value={employeeData.EmployeeEmail}
-              />
+              <ReadOnlyField label="Email" value={employeeData.EmployeeEmail} />
               <ReadOnlyField
                 label="Employee SAP Number/ID"
                 value={employeeData.EmployeeSAPID}
