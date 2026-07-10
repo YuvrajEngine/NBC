@@ -28,6 +28,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
 
   const [employeeData, setEmployeeData] = React.useState({
     EmployeeName: "",
+    EmployeeEmail: "",
     EmployeeSAPID: "",
     Department: "",
     ContactNo: "",
@@ -66,6 +67,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
 
         setEmployeeData({
           EmployeeName: emp.EmployeeName || "",
+          EmployeeEmail: emp.EmployeeEmail || "",
           EmployeeSAPID: emp.EmployeeSAPID || "",
           Department: emp.Department || "",
           ContactNo: emp.ContactNo || "",
@@ -131,6 +133,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
     Title: "",
     RequestNo: requestNo,
     RequestedBy: employeeData.EmployeeName,
+    EmployeeEmail: props.userEmail,
     ReportingManager: employeeData.ReportingManager,
     EmployeeSAPNumberID: employeeData.EmployeeSAPID,
     CostCentre: employeeData.CostCentre,
@@ -203,7 +206,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
 
       Swal.fire({
         title: "Draft Saved",
-        text: "Change request saved as draft successfully.",
+        text: "Draft Saved Successfully.",
         icon: "success",
       }).then(() => {
         history.push("/Dashboard");
@@ -302,7 +305,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
 
       Swal.fire({
         title: "Success",
-        text: "Change request submitted successfully.",
+        text: "Request Submitted Successfully.",
         icon: "success",
       }).then(() => {
         history.push("/Dashboard");
@@ -371,6 +374,10 @@ const NewRequest: React.FC<INbcProps> = (props) => {
               <ReadOnlyField
                 label="Requested By"
                 value={employeeData.EmployeeName}
+              />
+              <ReadOnlyField
+                label="Email"
+                value={employeeData.EmployeeEmail}
               />
               <ReadOnlyField
                 label="Employee SAP Number/ID"

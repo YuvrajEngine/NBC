@@ -27,6 +27,7 @@ interface IChangeRequestItem {
   RequestedBy: string;
   ReportingManager: string;
   EmployeeSAPNumberID: string;
+  EmployeeEmail: string;
   CostCentre: string;
   Department: string;
   Grade: string;
@@ -81,7 +82,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks",
         "",
         props,
       );
@@ -269,6 +270,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
     RequestedBy: requestData?.RequestedBy || "",
     ReportingManager: requestData?.ReportingManager || "",
     EmployeeSAPNumberID: requestData?.EmployeeSAPNumberID || "",
+    EmployeeEmail: requestData?.EmployeeEmail || "",
     CostCentre: requestData?.CostCentre || "",
     Department: requestData?.Department || "",
     Grade: requestData?.Grade || "",
@@ -319,7 +321,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
 
       Swal.fire({
         title: "Draft Saved",
-        text: "Change request saved as draft successfully.",
+        text: "Draft Saved Successfully.",
         icon: "success",
       }).then(() => {
         history.push("/Dashboard");
@@ -404,7 +406,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
 
       Swal.fire({
         title: "Success",
-        text: "Change request updated successfully.",
+        text: "Request Submitted Successfully.",
         icon: "success",
       }).then(() => {
         history.push("/Dashboard");
@@ -478,6 +480,9 @@ const EditRequest: React.FC<INbcProps> = (props) => {
                 value={requestData?.EmployeeSAPNumberID}
               />
               <ReadOnlyField
+                label="Email"
+                value={requestData?.EmployeeEmail}
+              />              <ReadOnlyField
                 label="Department"
                 value={requestData?.Department}
               />

@@ -10,7 +10,7 @@ export interface IChangeRequestItem {
   RequestedBy: string;
   ReportingManager: string;
   EmployeeSAPNumberID: string;
-
+  EmployeeEmail: string;
   CostCentre: string;
   Department: string;
   Grade: string;
@@ -49,7 +49,7 @@ export interface IChangeRequestPayload {
   RequestedBy?: string;
   ReportingManager?: string;
   EmployeeSAPNumberID?: string;
-
+  EmployeeEmail?: string;
   CostCentre?: string;
   Department?: string;
   Grade?: string;
@@ -137,7 +137,7 @@ export default function ChangeRequestOps(): IChangeRequestOps {
         RequestedBy: item.RequestedBy ?? "",
         ReportingManager: item.ReportingManager ?? "",
         EmployeeSAPNumberID: item.EmployeeSAPNumberID ?? "",
-
+        EmployeeEmail: item.EmployeeEmail ?? "",
         CostCentre: item.CostCentre ?? "",
         Department: item.Department ?? "",
         Grade: item.Grade ?? "",

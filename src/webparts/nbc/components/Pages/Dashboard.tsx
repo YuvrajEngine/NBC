@@ -19,7 +19,7 @@ const Dashboard: React.FC<INbcProps> = (props) => {
   const [requestTypeFilter, setRequestTypeFilter] = React.useState("All");
   const [statusFilter, setStatusFilter] = React.useState("All");
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const toggleSidebar = (): void => setIsSidebarOpen((prev) => !prev);
 
@@ -28,14 +28,14 @@ const Dashboard: React.FC<INbcProps> = (props) => {
 
     try {
       const response = await changeRequestOps.getChangeRequestData(
-        `RequestedBy eq '${props.userDisplayName}'`,
+        `EmployeeEmail eq '${props.userEmail}'`,
         { column: "Created", isAscending: false },
         props,
       );
 
       const ownRequests = (response || []).filter(
         (item: IChangeRequestItem) =>
-          item.RequestedBy?.toLowerCase() === props.userDisplayName?.toLowerCase(),
+          item.EmployeeEmail?.toLowerCase() === props.userEmail?.toLowerCase(),
       );
 
       setDashboardData(ownRequests);

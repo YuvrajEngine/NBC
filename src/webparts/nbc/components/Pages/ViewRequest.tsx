@@ -17,6 +17,7 @@ interface IChangeRequestItem {
   RequestedBy: string;
   ReportingManager: string;
   EmployeeSAPNumberID: string;
+  EmployeeEmail: string;
   CostCentre: string;
   Department: string;
   Grade: string;
@@ -55,7 +56,7 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks",
         "",
         props,
       );
@@ -159,7 +160,8 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
 
             <div className="requestor-grid">
               <ReadOnlyField label="Requested By" value={requestData?.RequestedBy} />
-              <ReadOnlyField label="Employee SAP Number/ID" value={requestData?.EmployeeSAPNumberID} />
+              <ReadOnlyField label="Email" value={requestData?.EmployeeSAPNumberID} />
+              <ReadOnlyField label="Employee Email" value={requestData?.EmployeeEmail} />
               <ReadOnlyField label="Department" value={requestData?.Department} />
               <ReadOnlyField label="Grade" value={requestData?.Grade} />
               <ReadOnlyField label="Cost Centre" value={requestData?.CostCentre} />
