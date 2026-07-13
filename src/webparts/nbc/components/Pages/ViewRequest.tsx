@@ -30,6 +30,7 @@ interface IChangeRequestItem {
   Urgencyofrequest: string;
   AdditionalInformation: string;
   Remarks: string;
+  WorkflowHistory: string;
 }
 
 interface ISavedFile {
@@ -46,6 +47,7 @@ interface IWorkflowHistoryItem {
   ActionDate?: string;
   Comment?: string;
   Remarks?: string;
+  CurrentStatus?: string;
 }
 
 const ViewRequest: React.FC<INbcProps> = (props) => {
@@ -68,12 +70,20 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory",
         "",
         props,
       );
 
       setRequestData(response || null);
+
+      try {
+        setWorkflowHistory(
+          response?.WorkflowHistory ? JSON.parse(response.WorkflowHistory) : [],
+        );
+      } catch {
+        setWorkflowHistory([]);
+      }
     } catch (error) {
       console.error("View request fetch error:", error);
     } finally {

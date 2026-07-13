@@ -965,6 +965,7 @@
 
   .draft-btn,
   .submit-btn-new,
+  .ap-exit-btn,
   .exit-btn {
     height: 38px;
     min-width: 130px;
@@ -1021,6 +1022,15 @@
       background-color: #b71c1c;
     }
   }
+
+    .ap-exit-btn {
+    background-color: #383838;
+    color: #ffffff;
+
+    &:not(:disabled):hover {
+      background-color: #000000;
+    }
+  }
   .remove-file-icon {
   margin-left: auto;
   font-size: 12px;
@@ -1032,6 +1042,81 @@
   }
 }
   //-------------------- End NewRequest Style --------------------//
+  //-------------------- Approval Form Extra Styles ---------------//
+  .reject-btn-new {
+    height: 38px;
+    min-width: 130px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      opacity 0.2s,
+      transform 0.1s;
+    background-color: #b91c1c;
+    color: #ffffff;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    &:not(:disabled):hover {
+      background-color: #991b1b;
+    }
+
+    &:not(:disabled):active {
+      transform: translateY(1px);
+    }
+  }
+
+  .sendback-btn {
+    height: 38px;
+    min-width: 130px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      opacity 0.2s,
+      transform 0.1s;
+    background-color: #f5c800;
+    color: #ffffff;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    &:not(:disabled):hover {
+      background-color: rgb(226, 192, 0);
+    }
+
+    &:not(:disabled):active {
+      transform: translateY(1px);
+    }
+  }
+
+  .approver-remarks-textarea {
+    border-color: #14335e !important;
+    background: #f7f9fc;
+
+    &:focus {
+      border-color: #0d1f3d !important;
+      box-shadow: 0 0 0 2px rgba(20, 51, 94, 0.15);
+    }
+  }
+  //-------------------- End Approval Form Extra Styles ------------//
   //-------------------- Workflowhistory Table Styles ------------//
   .workflow-history-container {
   margin-top: 20px;

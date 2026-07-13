@@ -7,6 +7,8 @@ import Dashboard from "./Pages/Dashboard";
 import NewRequest from "./Pages/NewRequest";
 import ViewRequest from "./Pages/ViewRequest";
 import EditRequest from "./Pages/EditRequest";
+import ApprovalDashboard from "./Pages/ApproverDashboard";
+import ApprovalForm from "./Pages/ApprovalForm";
 
 export default class Nbc extends React.Component<INbcProps> {
   public render(): React.ReactElement<INbcProps> {
@@ -19,6 +21,8 @@ export default class Nbc extends React.Component<INbcProps> {
             <Route exact path="/NewRequest" render={() => <NewRequest {...this.props} />} />
             <Route exact path="/ViewRequest/:id" render={() => <ViewRequest {...this.props} />} />
             <Route exact path="/EditRequest/:id" render={() => <EditRequest {...this.props} />} />
+            <Route exact path="/ApprovalDashboard" render={() => <ApprovalDashboard {...this.props} />} />
+            <Route exact path="/ApprovalForm/:id" render={() => <ApprovalForm {...this.props} />} />
           </Switch>
         </HashRouter>
       </section>

@@ -13,8 +13,17 @@ import ChangeRequestOps, {
 import SPCRUDOPS from "../../services/DAL/spcrudops";
 import "./CSS/NewRequest.scss";
 
-  const DOCS_LIBRARY = "NBCDocs";
-  const NewRequest: React.FC<INbcProps> = (props) => {
+interface IApproverDetails {
+  Id: number;
+  Name: string;
+  Role: string;
+  Level: number;
+  status: string;
+}
+
+const DOCS_LIBRARY = "NBCDocs";
+
+const NewRequest: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const employeeMasterOps = React.useMemo(() => EmployeeMasterOps(), []);
   const changeRequestOps = React.useMemo(() => ChangeRequestOps(), []);
@@ -33,6 +42,10 @@ import "./CSS/NewRequest.scss";
     CostCentre: "",
   });
 
+  const [approverDetails, setApproverDetails] = React.useState<
+    IApproverDetails[]
+  >([]);
+
   const [changeRequestData, setChangeRequestData] = React.useState({
     ProgramConfigurationChange: "",
     RequestType: "",
@@ -45,6 +58,55 @@ import "./CSS/NewRequest.scss";
   });
 
   const [supportingFiles, setSupportingFiles] = React.useState<File[]>([]);
+
+  const buildApprovalFlow = async (rmData: {
+    RMId: number | null;
+    RM: string;
+  }): Promise<void> => {
+    try {
+      const sp = await SPCRUDOPS();
+
+      const baseApprovers: IApproverDetails[] = [];
+
+      if (rmData.RMId) {
+        baseApprovers.push({
+          Id: rmData.RMId,
+          Name: rmData.RM,
+          Role: "RM",
+          Level: 1,
+          status: "Pending",
+        });
+      }
+
+      const matrixData = await sp.getData(
+        "ApprovalMatrix",
+        "Title,Role,Level,User/Id,User/Title",
+        "User",
+        `Status eq 'Active'`,
+        { column: "Level", isAscending: true },
+        props,
+      );
+
+      const matrixApprovers = matrixData.map((item: any, index: number) => ({
+        Id: item.User?.Id,
+        Name: item.User?.Title,
+        Role: item.Role,
+        Level: baseApprovers.length + index + 1,
+        status: "",
+      }));
+
+      const fullFlow = [...baseApprovers, ...matrixApprovers];
+
+      if (fullFlow.length > 0) {
+        fullFlow[0].status = "Pending";
+      }
+
+      setApproverDetails(fullFlow);
+    } catch (error) {
+      console.error("Error building approval flow:", error);
+    }
+  };
+
   const getEmployeeDetails = async (): Promise<void> => {
     setIsLoading(true);
 
@@ -70,6 +132,11 @@ import "./CSS/NewRequest.scss";
         });
 
         setIsRequestorValid(true);
+
+        await buildApprovalFlow({
+          RMId: emp.ReportingManagerId || null,
+          RM: emp.ReportingManager || "",
+        });
       } else {
         setIsRequestorValid(false);
 
@@ -122,30 +189,51 @@ import "./CSS/NewRequest.scss";
   const buildPayload = (
     isDraft: boolean,
     requestNo: string,
-  ): IChangeRequestPayload => ({
-    Title: "",
-    RequestNo: requestNo,
-    RequestedBy: employeeData.EmployeeName,
-    EmployeeEmail: props.userEmail,
-    ReportingManager: employeeData.ReportingManager,
-    EmployeeSAPNumberID: employeeData.EmployeeSAPID,
-    CostCentre: employeeData.CostCentre,
-    Department: employeeData.Department,
-    Grade: employeeData.Grade,
-    ContactNumber: employeeData.ContactNo
-      ? Number(employeeData.ContactNo)
-      : null,
-    ProgramConfigurationChange: changeRequestData.ProgramConfigurationChange,
-    RequestType: changeRequestData.RequestType,
-    RequestDescriptionwithReason:
-      changeRequestData.RequestDescriptionwithReason,
-    ProgramName: changeRequestData.ProgramName,
-    Tcode: changeRequestData.Tcode,
-    Urgencyofrequest: changeRequestData.Urgencyofrequest,
-    AdditionalInformation: changeRequestData.AdditionalInformation,
-    Remarks: changeRequestData.Remarks,
-    Status: isDraft ? "Save as Draft" : "Pending for Approval",
-  });
+  ): IChangeRequestPayload => {
+    const currentApprover =
+      approverDetails.length > 0 ? approverDetails[0].Id : null;
+    const allApproversJson = JSON.stringify(approverDetails);
+
+    const workflowHistory = isDraft
+      ? []
+      : [
+          {
+            CurrentApprover: employeeData.EmployeeName,
+            ActionTaken: "Request Submitted",
+            Comment: changeRequestData.Remarks,
+            Date: new Date().toISOString(),
+            CurrentStatus: "Submitted",
+          },
+        ];
+
+    return {
+      Title: "",
+      RequestNo: requestNo,
+      RequestedBy: employeeData.EmployeeName,
+      EmployeeEmail: props.userEmail,
+      ReportingManager: employeeData.ReportingManager,
+      EmployeeSAPNumberID: employeeData.EmployeeSAPID,
+      CostCentre: employeeData.CostCentre,
+      Department: employeeData.Department,
+      Grade: employeeData.Grade,
+      ContactNumber: employeeData.ContactNo
+        ? Number(employeeData.ContactNo)
+        : null,
+      ProgramConfigurationChange: changeRequestData.ProgramConfigurationChange,
+      RequestType: changeRequestData.RequestType,
+      RequestDescriptionwithReason:
+        changeRequestData.RequestDescriptionwithReason,
+      ProgramName: changeRequestData.ProgramName,
+      Tcode: changeRequestData.Tcode,
+      Urgencyofrequest: changeRequestData.Urgencyofrequest,
+      AdditionalInformation: changeRequestData.AdditionalInformation,
+      Remarks: changeRequestData.Remarks,
+      Status: isDraft ? "Save as Draft" : "Pending for Approval",
+      CurrentApproverId: currentApprover,
+      ApprovalMatrix: allApproversJson,
+      WorkflowHistory: JSON.stringify(workflowHistory),
+    };
+  };
 
   const extractItemId = (response: any): number | null => {
     return response?.Id ?? response?.data?.Id ?? response?.d?.Id ?? null;
@@ -263,6 +351,14 @@ import "./CSS/NewRequest.scss";
       return;
     }
 
+    if (!Tcode) {
+      Swal.fire({
+        title: "Validation",
+        text: "Please Enter TCode.",
+        icon: "warning",
+      });
+      return;
+    }
     if (!Urgencyofrequest) {
       Swal.fire({
         title: "Validation",
@@ -276,15 +372,6 @@ import "./CSS/NewRequest.scss";
       Swal.fire({
         title: "Validation",
         text: "Please Enter Request Description With Reason.",
-        icon: "warning",
-      });
-      return;
-    }
-
-    if (!Tcode) {
-      Swal.fire({
-        title: "Validation",
-        text: "Please Enter TCode.",
         icon: "warning",
       });
       return;

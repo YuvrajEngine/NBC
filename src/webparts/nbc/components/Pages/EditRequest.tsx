@@ -39,6 +39,7 @@ interface IChangeRequestItem {
   Urgencyofrequest: string;
   AdditionalInformation: string;
   Remarks: string;
+  WorkflowHistory: string;
 }
 
 interface ISavedFile {
@@ -55,6 +56,7 @@ interface IWorkflowHistoryItem {
   ActionDate?: string;
   Comment?: string;
   Remarks?: string;
+  CurrentStatus?: string;
 }
 
 const EditRequest: React.FC<INbcProps> = (props) => {
@@ -95,7 +97,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory",
         "",
         props,
       );
@@ -114,6 +116,14 @@ const EditRequest: React.FC<INbcProps> = (props) => {
           AdditionalInformation: response.AdditionalInformation || "",
           Remarks: response.Remarks || "",
         });
+
+        try {
+          setWorkflowHistory(
+            response.WorkflowHistory ? JSON.parse(response.WorkflowHistory) : [],
+          );
+        } catch {
+          setWorkflowHistory([]);
+        }
       } else {
         setRequestData(null);
       }
@@ -277,27 +287,43 @@ const EditRequest: React.FC<INbcProps> = (props) => {
     }
   };
 
-  const buildPayload = (isDraft: boolean): IChangeRequestPayload => ({
-    Title: "",
-    RequestNo: requestData?.RequestNo || "",
-    RequestedBy: requestData?.RequestedBy || "",
-    ReportingManager: requestData?.ReportingManager || "",
-    EmployeeSAPNumberID: requestData?.EmployeeSAPNumberID || "",
-    CostCentre: requestData?.CostCentre || "",
-    Department: requestData?.Department || "",
-    Grade: requestData?.Grade || "",
-    ContactNumber: requestData?.ContactNumber ?? null,
-    ProgramConfigurationChange: changeRequestData.ProgramConfigurationChange,
-    RequestType: changeRequestData.RequestType,
-    RequestDescriptionwithReason:
-      changeRequestData.RequestDescriptionwithReason,
-    ProgramName: changeRequestData.ProgramName,
-    Tcode: changeRequestData.Tcode,
-    Urgencyofrequest: changeRequestData.Urgencyofrequest,
-    AdditionalInformation: changeRequestData.AdditionalInformation,
-    Remarks: changeRequestData.Remarks,
-    Status: isDraft ? "Save as Draft" : "Pending for Approval",
-  });
+  const buildPayload = (isDraft: boolean): IChangeRequestPayload => {
+    const updatedHistory = isDraft
+      ? workflowHistory
+      : [
+          ...workflowHistory,
+          {
+            CurrentApprover: requestData?.RequestedBy || props.userDisplayName,
+            ActionTaken: "Request Submitted",
+            Comment: changeRequestData.Remarks,
+            Date: new Date().toISOString(),
+            CurrentStatus: "Pending for Approval",
+          },
+        ];
+
+    return {
+      Title: "",
+      RequestNo: requestData?.RequestNo || "",
+      RequestedBy: requestData?.RequestedBy || "",
+      ReportingManager: requestData?.ReportingManager || "",
+      EmployeeSAPNumberID: requestData?.EmployeeSAPNumberID || "",
+      CostCentre: requestData?.CostCentre || "",
+      Department: requestData?.Department || "",
+      Grade: requestData?.Grade || "",
+      ContactNumber: requestData?.ContactNumber ?? null,
+      ProgramConfigurationChange: changeRequestData.ProgramConfigurationChange,
+      RequestType: changeRequestData.RequestType,
+      RequestDescriptionwithReason:
+        changeRequestData.RequestDescriptionwithReason,
+      ProgramName: changeRequestData.ProgramName,
+      Tcode: changeRequestData.Tcode,
+      Urgencyofrequest: changeRequestData.Urgencyofrequest,
+      AdditionalInformation: changeRequestData.AdditionalInformation,
+      Remarks: changeRequestData.Remarks,
+      Status: isDraft ? "Save as Draft" : "Pending for Approval",
+      WorkflowHistory: JSON.stringify(updatedHistory),
+    };
+  };
 
   const folderExists = async (folderUrl: string): Promise<boolean> => {
     try {
@@ -413,6 +439,15 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       return;
     }
 
+    if (!Tcode) {
+      Swal.fire({
+        title: "Validation",
+        text: "Please Enter TCode.",
+        icon: "warning",
+      });
+      return;
+    }
+    
     if (!Urgencyofrequest) {
       Swal.fire({
         title: "Validation",
@@ -431,14 +466,6 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       return;
     }
 
-    if (!Tcode) {
-      Swal.fire({
-        title: "Validation",
-        text: "Please Enter TCode.",
-        icon: "warning",
-      });
-      return;
-    }
     setIsSaving(true);
 
     try {
