@@ -27,7 +27,6 @@ interface IChangeRequestItem {
   RequestedBy: string;
   ReportingManager: string;
   EmployeeSAPNumberID: string;
-  EmployeeEmail: string;
   CostCentre: string;
   Department: string;
   Grade: string;
@@ -82,7 +81,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks",
         "",
         props,
       );
@@ -270,7 +269,6 @@ const EditRequest: React.FC<INbcProps> = (props) => {
     RequestedBy: requestData?.RequestedBy || "",
     ReportingManager: requestData?.ReportingManager || "",
     EmployeeSAPNumberID: requestData?.EmployeeSAPNumberID || "",
-    EmployeeEmail: requestData?.EmployeeEmail || "",
     CostCentre: requestData?.CostCentre || "",
     Department: requestData?.Department || "",
     Grade: requestData?.Grade || "",
@@ -287,6 +285,27 @@ const EditRequest: React.FC<INbcProps> = (props) => {
     Status: isDraft ? "Save as Draft" : "Pending for Approval",
   });
 
+  const folderExists = async (folderUrl: string): Promise<boolean> => {
+    try {
+      const webUrl = props.currentSPContext.pageContext.web.absoluteUrl;
+
+      const response = await fetch(
+        `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(folderUrl)}')`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json;odata=verbose",
+          },
+          credentials: "same-origin",
+        },
+      );
+
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const uploadNewFiles = async (): Promise<void> => {
     if (newFiles.length === 0) {
       return;
@@ -300,7 +319,11 @@ const EditRequest: React.FC<INbcProps> = (props) => {
 
     const folderUrl = `${webServerRelativeUrl}/${DOCS_LIBRARY}/${id}`;
 
-    await spCrudOps.createFolder(DOCS_LIBRARY, `${id}`, props);
+    const alreadyExists = await folderExists(folderUrl);
+
+    if (!alreadyExists) {
+      await spCrudOps.createFolder(DOCS_LIBRARY, `${id}`, props);
+    }
 
     for (const file of newFiles) {
       await spCrudOps.uploadFile(folderUrl, file, props);
@@ -472,6 +495,10 @@ const EditRequest: React.FC<INbcProps> = (props) => {
 
             <div className="requestor-grid">
               <ReadOnlyField
+                label="Request No"
+                value={requestData?.RequestNo}
+              />
+              <ReadOnlyField
                 label="Requested By"
                 value={requestData?.RequestedBy}
               />
@@ -480,9 +507,6 @@ const EditRequest: React.FC<INbcProps> = (props) => {
                 value={requestData?.EmployeeSAPNumberID}
               />
               <ReadOnlyField
-                label="Email"
-                value={requestData?.EmployeeEmail}
-              />              <ReadOnlyField
                 label="Department"
                 value={requestData?.Department}
               />

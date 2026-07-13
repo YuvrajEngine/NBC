@@ -1,19 +1,28 @@
 import * as React from "react";
 import { useHistory } from "react-router-dom";
 import type { INbcProps } from "../INbcProps";
-import { faBars, faPlus, faEye, faPenSquare } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faPlus,
+  faEye,
+  faPenSquare,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import logoPrimary from "../../assets/Images/NBC_LOGO.png";
 import logoSecondary from "../../assets/Images/CKA_LOGO.png";
 import userLogo from "../../assets/Images/UserAvatar.png";
-import ChangeRequestOps, { IChangeRequestItem } from "../../services/BAL/ChangeRequestMaster";
+import ChangeRequestOps, {
+  IChangeRequestItem,
+} from "../../services/BAL/ChangeRequestMaster";
 
 const Dashboard: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const changeRequestOps = React.useMemo(() => ChangeRequestOps(), []);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [dashboardData, setDashboardData] = React.useState<IChangeRequestItem[]>([]);
+  const [dashboardData, setDashboardData] = React.useState<
+    IChangeRequestItem[]
+  >([]);
   const [searchText, setSearchText] = React.useState("");
   const [requestNoFilter, setRequestNoFilter] = React.useState("All");
   const [requestTypeFilter, setRequestTypeFilter] = React.useState("All");
@@ -89,7 +98,13 @@ const Dashboard: React.FC<INbcProps> = (props) => {
     }
 
     return data;
-  }, [dashboardData, requestNoFilter, requestTypeFilter, statusFilter, searchText]);
+  }, [
+    dashboardData,
+    requestNoFilter,
+    requestTypeFilter,
+    statusFilter,
+    searchText,
+  ]);
 
   React.useEffect(() => {
     setCurrentPage(1);
@@ -129,12 +144,23 @@ const Dashboard: React.FC<INbcProps> = (props) => {
       <div className="dashboard-main">
         <div className="dashboard-header">
           <div className="header-left">
-            <img src={logoSecondary} alt="CKA Birla Group Logo" className="logo-secondary" />
+            <img
+              src={logoSecondary}
+              alt="CKA Birla Group Logo"
+              className="logo-secondary"
+            />
             <img src={logoPrimary} alt="nbc Logo" className="logo-primary" />
           </div>
 
+          <div className="page-header">
+            <h2 className="page-title">Change Request Management</h2>
+          </div>
+
           <div className="header-right">
-            <div className="user-name-new"><span className="welcome-text">Welcome, </span>{props.userDisplayName}</div>
+            <div className="user-name-new">
+              <span className="welcome-text">Welcome, </span>
+              {props.userDisplayName}
+            </div>
             <div className="user-icon">
               <img src={userLogo} alt="User" />
             </div>
@@ -174,7 +200,9 @@ const Dashboard: React.FC<INbcProps> = (props) => {
               >
                 <option value="All">Status</option>
                 <option value="Save as Draft">Save as Draft</option>
-                <option value="Pending for Approval">Pending for Approval</option>
+                <option value="Pending for Approval">
+                  Pending for Approval
+                </option>
                 <option value="Approved">Approved</option>
                 <option value="Rejected">Rejected</option>
               </select>
@@ -188,7 +216,10 @@ const Dashboard: React.FC<INbcProps> = (props) => {
                 onChange={(e) => setSearchText(e.target.value)}
               />
 
-              <button className="new-po-btn" onClick={() => history.push("/NewRequest")}>
+              <button
+                className="new-po-btn"
+                onClick={() => history.push("/NewRequest")}
+              >
                 <FontAwesomeIcon icon={faPlus} />
                 <span>New Change Request</span>
               </button>
@@ -225,19 +256,21 @@ const Dashboard: React.FC<INbcProps> = (props) => {
                         <td>{item.ProgramName}</td>
                         <td>{item.Tcode}</td>
                         <td>
-                          <span className={`urgency-badge ${getUrgencyClass(item.Urgencyofrequest)}`}>
+                          <span
+                            className={`urgency-badge ${getUrgencyClass(item.Urgencyofrequest)}`}
+                          >
                             {item.Urgencyofrequest}
                           </span>
                         </td>
-                        <td>
-                            {item.Status}
-                        </td>
+                        <td>{item.Status}</td>
                         <td>
                           <div className="action-btn-group">
                             <button
                               className="action-btn view-btn"
                               title="View"
-                              onClick={() => history.push(`/ViewRequest/${item.Id}`)}
+                              onClick={() =>
+                                history.push(`/ViewRequest/${item.Id}`)
+                              }
                             >
                               <FontAwesomeIcon icon={faEye} />
                             </button>
@@ -246,7 +279,9 @@ const Dashboard: React.FC<INbcProps> = (props) => {
                               <button
                                 className="action-btn edit-btn"
                                 title="Edit"
-                                onClick={() => history.push(`/EditRequest/${item.Id}`)}
+                                onClick={() =>
+                                  history.push(`/EditRequest/${item.Id}`)
+                                }
                               >
                                 <FontAwesomeIcon icon={faPenSquare} />
                               </button>
@@ -270,15 +305,17 @@ const Dashboard: React.FC<INbcProps> = (props) => {
                   Prev
                 </button>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    className={`page-btn ${currentPage === page ? "active-page" : ""}`}
-                    onClick={() => changePage(page)}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      className={`page-btn ${currentPage === page ? "active-page" : ""}`}
+                      onClick={() => changePage(page)}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
 
                 <button
                   className="page-btn"

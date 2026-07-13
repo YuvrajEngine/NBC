@@ -251,9 +251,10 @@
 
     .welcome-text {
       font-size: 16px;
-      font-family:cursive;
-      font-weight: 800;
+      font-family: "Inter", sans-serif;
+      font-weight: 700;
       color: #ffffff;
+      letter-spacing: 0.3px;
     }
 
     .user-icon img {
@@ -353,31 +354,34 @@
   }
 
 .dashboard-table {
-    width: 100%;
-    border-collapse: collapse;
-    thead {
-      background: #0b1f3a;
-      th {
-        padding: 14px 16px;
-        text-align: left;
-        font-size: 13px;
-        font-weight: 600;
-        color: #ffffff;
-        text-align: center;
-        white-space: nowrap;
-        border-right: 1px solid #8d8d8da7;
+  width: 100%;
+  border-collapse: collapse;
 
-        &:last-child {
-          border-right: none;
-        }
+  thead {
+    background: #0b1f3a;
+
+    th {
+      padding: 14px 16px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      border-right: 1px solid #8d8d8da7;
+
+      &:last-child {
+        border-right: none;
       }
     }
+  }
 
-    tbody td {
+  tbody {
+    td {
       padding: 14px 16px;
       font-size: 13px;
+      font-weight: 400;
+      color: #000000;
       text-align: center;
-      color: #333333;
       white-space: nowrap;
       border-bottom: 1px solid #eeeeee;
       border-right: 1px solid #eeeeee;
@@ -387,6 +391,7 @@
       }
     }
   }
+}
 
   .action-btn {
     width: 32px;
@@ -422,18 +427,20 @@
     font-weight: 600;
   }
 
-  .urgent-urgency {
-    background: #ff40407e;
-    color: #000000;
-  }
-  .early-urgency {
-    background: #fbdeb5;
-    color: #573400;
-  }
-  .normal-urgency {
-    background: #b7fccc;
-    color: #157347;
-  }
+.normal-urgency {
+  background: linear-gradient(135deg, #e8fff2, #c8f7dc);
+  color: #157347;
+}
+
+.early-urgency {
+  background: linear-gradient(135deg, #fff8e1, #ffe7b0);
+  color: #7a4d00;
+}
+
+.urgent-urgency {
+  background: linear-gradient(135deg, #ffe5e5, #ffc2c2);
+  color: #8b0000;
+}
 
   .no-data {
     text-align: center;
