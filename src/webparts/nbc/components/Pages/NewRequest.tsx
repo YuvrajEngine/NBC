@@ -232,6 +232,7 @@ import "./CSS/NewRequest.scss";
       RequestType,
       ProgramName,
       Urgencyofrequest,
+      Tcode,
       RequestDescriptionwithReason,
     } = changeRequestData;
 
@@ -275,6 +276,15 @@ import "./CSS/NewRequest.scss";
       Swal.fire({
         title: "Validation",
         text: "Please Enter Request Description With Reason.",
+        icon: "warning",
+      });
+      return;
+    }
+
+    if (!Tcode) {
+      Swal.fire({
+        title: "Validation",
+        text: "Please Enter TCode.",
         icon: "warning",
       });
       return;
@@ -450,7 +460,9 @@ import "./CSS/NewRequest.scss";
               </div>
 
               <div className="requestor-field">
-                <label>Tcode</label>
+                <label>Tcode
+                  <span className="required">*</span>
+                </label>
                 <input
                   type="text"
                   name="Tcode"

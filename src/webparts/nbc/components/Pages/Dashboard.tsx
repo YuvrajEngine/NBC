@@ -1,24 +1,18 @@
 import * as React from "react";
 import { useHistory } from "react-router-dom";
 import type { INbcProps } from "../INbcProps";
-import {
-  faBars,
-  faPlus,
-  faEye,
-  faPenSquare,
-} from "@fortawesome/free-solid-svg-icons";
+import {faBars,faPlus,faEye,faPenSquare,faChevronDown,faChevronRight,} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import logoPrimary from "../../assets/Images/NBC_LOGO.png";
 import logoSecondary from "../../assets/Images/CKA_LOGO.png";
 import userLogo from "../../assets/Images/UserAvatar.png";
-import ChangeRequestOps, {
-  IChangeRequestItem,
-} from "../../services/BAL/ChangeRequestMaster";
+import ChangeRequestOps, {IChangeRequestItem,} from "../../services/BAL/ChangeRequestMaster";
 
 const Dashboard: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const changeRequestOps = React.useMemo(() => ChangeRequestOps(), []);
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  const [expandedMenu, setExpandedMenu] = React.useState<string | null>(null);
+  const [activeSubItem, setActiveSubItem] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [dashboardData, setDashboardData] = React.useState<
     IChangeRequestItem[]
@@ -30,7 +24,13 @@ const Dashboard: React.FC<INbcProps> = (props) => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
 
-  const toggleSidebar = (): void => setIsSidebarOpen((prev) => !prev);
+  const toggleMenu = (menu: string): void => {
+    setExpandedMenu((prev) => (prev === menu ? null : menu));
+  };
+
+  const handleSubItemClick = (menu: string, subItem: string): void => {
+    setActiveSubItem(`${menu}-${subItem}`);
+  };
 
   const getDashboardData = async (): Promise<void> => {
     setIsLoading(true);
@@ -140,6 +140,74 @@ const Dashboard: React.FC<INbcProps> = (props) => {
           <div className="black-spinner" />
         </div>
       )}
+
+      <div className="dashboard-sidebar">
+        <div className="menu-icon">
+          <FontAwesomeIcon icon={faBars} />
+        </div>
+
+        <div className="sidebar-menu-wrapper">
+          <div className="sidebar-item-group">
+            <div
+              className="sidebar-item"
+              onClick={() => toggleMenu("myRequest")}
+            >
+              <span>My Request</span>
+              <FontAwesomeIcon
+                icon={expandedMenu === "myRequest" ? faChevronDown : faChevronRight}
+                className="sidebar-caret"
+              />
+            </div>
+
+            {expandedMenu === "myRequest" && (
+              <div className="sidebar-submenu">
+                <div
+                  className={`sidebar-subitem ${activeSubItem === "myRequest-approved" ? "active-tab" : ""}`}
+                  onClick={() => handleSubItemClick("myRequest", "approved")}
+                >
+                  Approved
+                </div>
+                <div
+                  className={`sidebar-subitem ${activeSubItem === "myRequest-rejected" ? "active-tab" : ""}`}
+                  onClick={() => handleSubItemClick("myRequest", "rejected")}
+                >
+                  Rejected
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="sidebar-item-group">
+            <div
+              className="sidebar-item"
+              onClick={() => toggleMenu("approvalDashboard")}
+            >
+              <span>Approval Dashboard</span>
+              <FontAwesomeIcon
+                icon={expandedMenu === "approvalDashboard" ? faChevronDown : faChevronRight}
+                className="sidebar-caret"
+              />
+            </div>
+
+            {expandedMenu === "approvalDashboard" && (
+              <div className="sidebar-submenu">
+                <div
+                  className={`sidebar-subitem ${activeSubItem === "approvalDashboard-approved" ? "active-tab" : ""}`}
+                  onClick={() => handleSubItemClick("approvalDashboard", "approved")}
+                >
+                  Approved
+                </div>
+                <div
+                  className={`sidebar-subitem ${activeSubItem === "approvalDashboard-rejected" ? "active-tab" : ""}`}
+                  onClick={() => handleSubItemClick("approvalDashboard", "rejected")}
+                >
+                  Rejected
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="dashboard-main">
         <div className="dashboard-header">

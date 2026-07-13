@@ -37,6 +37,17 @@ interface ISavedFile {
   url: string;
 }
 
+interface IWorkflowHistoryItem {
+  CurrentApprover?: string;
+  ActionBy?: string;
+  ActionTaken?: string;
+  Action?: string;
+  Date?: string;
+  ActionDate?: string;
+  Comment?: string;
+  Remarks?: string;
+}
+
 const ViewRequest: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
@@ -46,6 +57,7 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
   const [requestData, setRequestData] = React.useState<IChangeRequestItem | null>(null);
   const [savedFiles, setSavedFiles] = React.useState<ISavedFile[]>([]);
   const [isAttachmentsOpen, setIsAttachmentsOpen] = React.useState(false);
+  const [workflowHistory, setWorkflowHistory] = React.useState<IWorkflowHistoryItem[]>([]);
 
   const getRequestDetails = async (): Promise<void> => {
     setIsLoading(true);
@@ -250,6 +262,42 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
                   disabled
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="workflow-history-container">
+            <div className="workflow-heading">Workflow History</div>
+            <div className="workflow-table-wrapper workflow-scroll">
+              <table className="workflow-table">
+                <thead>
+                  <tr>
+                    <th>Action By</th>
+                    <th>Action Taken</th>
+                    <th>Date</th>
+                    <th>Comment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workflowHistory.length > 0 ? (
+                    workflowHistory.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.CurrentApprover || item.ActionBy || "-"}</td>
+                        <td>{item.ActionTaken || item.Action || "-"}</td>
+                        <td>
+                          {item.Date || item.ActionDate
+                            ? new Date(item.Date || item.ActionDate || "").toLocaleString("en-GB")
+                            : "-"}
+                        </td>
+                        <td>{item.Comment || item.Remarks || "-"}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="no-history">No Workflow History Available</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 

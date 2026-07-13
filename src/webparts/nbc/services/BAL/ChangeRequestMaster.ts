@@ -3,10 +3,8 @@ import SPCRUDOPS from "../DAL/spcrudops";
 
 export interface IChangeRequestItem {
   Id: number | null;
-
   Title: string;
   RequestNo: string;
-
   RequestedBy: string;
   ReportingManager: string;
   EmployeeSAPNumberID: string;
@@ -14,30 +12,27 @@ export interface IChangeRequestItem {
   CostCentre: string;
   Department: string;
   Grade: string;
-
   ContactNumber: number | null;
-
   ProgramConfigurationChange: string;
   RequestType: string;
-
   RequestDescriptionwithReason: string;
-
   ProgramName: string;
   Tcode: string;
-
   Urgencyofrequest: string;
-
   AdditionalInformation: string;
-
   Status: string;
-
+  Remarks: string;
+  WorkflowHistory: string;
+  ApproverRemarks: string;
+  CurrentApprover: string;
+  CurrentApproverId: number | null;
+  CurrentApproverEmail: string;
+  ApprovalMatrix: string;
   Created: string | null;
   Modified: string | null;
-
   CreatedBy: string;
   CreatedById: number | null;
   CreatedByEmail: string;
-
   ModifiedBy: string;
   ModifiedById: number | null;
 }
@@ -45,7 +40,6 @@ export interface IChangeRequestItem {
 export interface IChangeRequestPayload {
   Title?: string;
   RequestNo?: string;
-
   RequestedBy?: string;
   ReportingManager?: string;
   EmployeeSAPNumberID?: string;
@@ -53,22 +47,20 @@ export interface IChangeRequestPayload {
   CostCentre?: string;
   Department?: string;
   Grade?: string;
-
   ContactNumber?: number | null;
-
   ProgramConfigurationChange?: string;
   RequestType?: string;
   Remarks?: string;
   RequestDescriptionwithReason?: string;
-
   ProgramName?: string;
   Tcode?: string;
-
   Urgencyofrequest?: string;
-
   AdditionalInformation?: string;
-
   Status?: string;
+  WorkflowHistory?: string;
+  ApproverRemarks?: string;
+  CurrentApproverId?: number | null;
+  ApprovalMatrix?: string;
 }
 
 export interface IChangeRequestOps {
@@ -112,17 +104,18 @@ export default function ChangeRequestOps(): IChangeRequestOps {
 
       const results = await spCrudOpsInstance.getData(
         "ChangeRequest",
-
         `*,
         Author/Id,
         Author/Title,
         Author/EMail,
         Editor/Id,
-        Editor/Title`,
-
+        Editor/Title,
+        CurrentApprover/Id,
+        CurrentApprover/Title,
+        CurrentApprover/EMail`,
         `Author,
-        Editor`,
-
+        Editor,
+        CurrentApprover`,
         filter,
         orderby,
         props,
@@ -130,10 +123,8 @@ export default function ChangeRequestOps(): IChangeRequestOps {
 
       const mapped: IChangeRequestItem[] = results.map((item: any) => ({
         Id: item.Id ?? null,
-
         Title: item.Title ?? "",
         RequestNo: item.RequestNo ?? "",
-
         RequestedBy: item.RequestedBy ?? "",
         ReportingManager: item.ReportingManager ?? "",
         EmployeeSAPNumberID: item.EmployeeSAPNumberID ?? "",
@@ -141,30 +132,27 @@ export default function ChangeRequestOps(): IChangeRequestOps {
         CostCentre: item.CostCentre ?? "",
         Department: item.Department ?? "",
         Grade: item.Grade ?? "",
-
         ContactNumber: item.ContactNumber ?? null,
-
         ProgramConfigurationChange: item.ProgramConfigurationChange ?? "",
         RequestType: item.RequestType ?? "",
         Remarks: item.Remarks ?? "",
         RequestDescriptionwithReason: item.RequestDescriptionwithReason ?? "",
-
         ProgramName: item.ProgramName ?? "",
         Tcode: item.Tcode ?? "",
-
         Urgencyofrequest: item.Urgencyofrequest ?? "",
-
         AdditionalInformation: item.AdditionalInformation ?? "",
-
         Status: item.Status ?? "",
-
+        WorkflowHistory: item.WorkflowHistory ?? "",
+        ApproverRemarks: item.ApproverRemarks ?? "",
+        CurrentApprover: item.CurrentApprover?.Title ?? "",
+        CurrentApproverId: item.CurrentApprover?.Id ?? null,
+        CurrentApproverEmail: item.CurrentApprover?.EMail ?? "",
+        ApprovalMatrix: item.ApprovalMatrix ?? "",
         Created: item.Created ?? null,
         Modified: item.Modified ?? null,
-
         CreatedBy: item.Author?.Title ?? "",
         CreatedById: item.Author?.Id ?? null,
         CreatedByEmail: item.Author?.EMail ?? "",
-
         ModifiedBy: item.Editor?.Title ?? "",
         ModifiedById: item.Editor?.Id ?? null,
       }));
@@ -183,10 +171,7 @@ export default function ChangeRequestOps(): IChangeRequestOps {
     try {
       const data = await getChangeRequestData(
         `Id eq ${id}`,
-        {
-          column: "Id",
-          isAscending: false,
-        },
+        { column: "Id", isAscending: false },
         props,
       );
 

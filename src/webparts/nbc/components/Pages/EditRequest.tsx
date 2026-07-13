@@ -46,6 +46,17 @@ interface ISavedFile {
   url: string;
 }
 
+interface IWorkflowHistoryItem {
+  CurrentApprover?: string;
+  ActionBy?: string;
+  ActionTaken?: string;
+  Action?: string;
+  Date?: string;
+  ActionDate?: string;
+  Comment?: string;
+  Remarks?: string;
+}
+
 const EditRequest: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
@@ -60,6 +71,9 @@ const EditRequest: React.FC<INbcProps> = (props) => {
   const [savedFiles, setSavedFiles] = React.useState<ISavedFile[]>([]);
   const [newFiles, setNewFiles] = React.useState<File[]>([]);
   const [isAttachmentsOpen, setIsAttachmentsOpen] = React.useState(false);
+  const [workflowHistory, setWorkflowHistory] = React.useState<
+    IWorkflowHistoryItem[]
+  >([]);
 
   const [changeRequestData, setChangeRequestData] = React.useState({
     ProgramConfigurationChange: "",
@@ -368,6 +382,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       RequestType,
       ProgramName,
       Urgencyofrequest,
+      Tcode,
       RequestDescriptionwithReason,
     } = changeRequestData;
 
@@ -416,6 +431,14 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       return;
     }
 
+    if (!Tcode) {
+      Swal.fire({
+        title: "Validation",
+        text: "Please Enter TCode.",
+        icon: "warning",
+      });
+      return;
+    }
     setIsSaving(true);
 
     try {
@@ -583,7 +606,9 @@ const EditRequest: React.FC<INbcProps> = (props) => {
               </div>
 
               <div className="requestor-field">
-                <label>Tcode</label>
+                <label>Tcode
+                  <span className="required">*</span>
+                </label>
                 <input
                   type="text"
                   name="Tcode"
@@ -715,6 +740,42 @@ const EditRequest: React.FC<INbcProps> = (props) => {
                   placeholder="Enter Remarks"
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="workflow-history-container">
+            <div className="workflow-heading">Workflow History</div>
+            <div className="workflow-table-wrapper workflow-scroll">
+              <table className="workflow-table">
+                <thead>
+                  <tr>
+                    <th>Action By</th>
+                    <th>Action Taken</th>
+                    <th>Date</th>
+                    <th>Comment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workflowHistory.length > 0 ? (
+                    workflowHistory.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.CurrentApprover || item.ActionBy || "-"}</td>
+                        <td>{item.ActionTaken || item.Action || "-"}</td>
+                        <td>
+                          {item.Date || item.ActionDate
+                            ? new Date(item.Date || item.ActionDate || "").toLocaleString("en-GB")
+                            : "-"}
+                        </td>
+                        <td>{item.Comment || item.Remarks || "-"}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="no-history">No Workflow History Available</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
