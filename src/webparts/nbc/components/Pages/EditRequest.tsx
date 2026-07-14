@@ -15,11 +15,20 @@ import userLogo from "../../assets/Images/UserAvatar.png";
 import ChangeRequestOps, {
   IChangeRequestPayload,
 } from "../../services/BAL/ChangeRequestMaster";
+import EmployeeMasterOps from "../../services/BAL/EmployeeMaster";
 import SPCRUDOPS from "../../services/DAL/spcrudops";
 import "./CSS/NewRequest.scss";
 
 const CHANGE_REQUEST_LIST = "ChangeRequest";
 const DOCS_LIBRARY = "NBCDocs";
+
+interface IApproverDetails {
+  Id: number;
+  Name: string;
+  Role: string;
+  Level: number;
+  status: string;
+}
 
 interface IChangeRequestItem {
   Id: number;
@@ -27,6 +36,7 @@ interface IChangeRequestItem {
   RequestedBy: string;
   ReportingManager: string;
   EmployeeSAPNumberID: string;
+  EmployeeEmail: string;
   CostCentre: string;
   Department: string;
   Grade: string;
@@ -40,6 +50,8 @@ interface IChangeRequestItem {
   AdditionalInformation: string;
   Remarks: string;
   WorkflowHistory: string;
+  ApprovalMatrix: string;
+  CurrentApproverId: number | null;
 }
 
 interface ISavedFile {
@@ -76,6 +88,9 @@ const EditRequest: React.FC<INbcProps> = (props) => {
   const [workflowHistory, setWorkflowHistory] = React.useState<
     IWorkflowHistoryItem[]
   >([]);
+  const [approverDetails, setApproverDetails] = React.useState<
+    IApproverDetails[]
+  >([]);
 
   const [changeRequestData, setChangeRequestData] = React.useState({
     ProgramConfigurationChange: "",
@@ -88,6 +103,82 @@ const EditRequest: React.FC<INbcProps> = (props) => {
     Remarks: "",
   });
 
+  const parseApprovalMatrix = (
+    item: IChangeRequestItem | null,
+  ): IApproverDetails[] => {
+    try {
+      return item?.ApprovalMatrix ? JSON.parse(item.ApprovalMatrix) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const buildApprovalFlowFallback = async (
+    employeeEmail: string,
+    fallbackRMName: string,
+  ): Promise<IApproverDetails[]> => {
+    try {
+      const employeeMasterOps = EmployeeMasterOps();
+      const sp = await SPCRUDOPS();
+
+      const empResponse = await employeeMasterOps.getEmployeeMasterData(
+        `EmployeeEmail eq '${employeeEmail}'`,
+        "",
+        props,
+      );
+
+      const emp = empResponse?.[0];
+      const baseApprovers: IApproverDetails[] = [];
+
+      if (emp?.ReportingManagerId) {
+        baseApprovers.push({
+          Id: emp.ReportingManagerId,
+          Name: emp.ReportingManager || fallbackRMName,
+          Role: "RM",
+          Level: 1,
+          status: "Pending",
+        });
+      }
+
+      const matrixData = await sp.getData(
+        "ApprovalMatrix",
+        "Title,Role,Level,User/Id,User/Title",
+        "User",
+        `Status eq 'Active'`,
+        { column: "Level", isAscending: true },
+        props,
+      );
+
+      const matrixApprovers: IApproverDetails[] = (matrixData || [])
+        .filter((item: any) => item.User?.Id)
+        .map((item: any, index: number) => ({
+          Id: item.User.Id,
+          Name: item.User.Title,
+          Role: item.Role,
+          Level: baseApprovers.length + index + 1,
+          status: "",
+        }));
+
+      const fullFlow = [...baseApprovers, ...matrixApprovers];
+
+      if (fullFlow.length > 0) {
+        fullFlow[0].status = "Pending";
+      }
+
+      return fullFlow;
+    } catch (error) {
+      console.error("Error building fallback approval flow:", error);
+      return [];
+    }
+  };
+
+  const getRibbonStepClass = (status: string): string => {
+    if (status === "Approved") return "approved";
+    if (status === "Rejected") return "rejected";
+    if (status === "Pending") return "current";
+    return "pending";
+  };
+
   const getRequestDetails = async (): Promise<void> => {
     setIsLoading(true);
 
@@ -97,7 +188,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory,ApprovalMatrix,CurrentApproverId",
         "",
         props,
       );
@@ -116,6 +207,18 @@ const EditRequest: React.FC<INbcProps> = (props) => {
           AdditionalInformation: response.AdditionalInformation || "",
           Remarks: response.Remarks || "",
         });
+
+        const parsedApprovers = parseApprovalMatrix(response);
+
+        if (parsedApprovers.length > 0) {
+          setApproverDetails(parsedApprovers);
+        } else {
+          const fallbackApprovers = await buildApprovalFlowFallback(
+            response.EmployeeEmail,
+            response.ReportingManager,
+          );
+          setApproverDetails(fallbackApprovers);
+        }
 
         try {
           setWorkflowHistory(
@@ -288,20 +391,10 @@ const EditRequest: React.FC<INbcProps> = (props) => {
   };
 
   const buildPayload = (isDraft: boolean): IChangeRequestPayload => {
-    const updatedHistory = isDraft
-      ? workflowHistory
-      : [
-          ...workflowHistory,
-          {
-            CurrentApprover: requestData?.RequestedBy || props.userDisplayName,
-            ActionTaken: "Request Submitted",
-            Comment: changeRequestData.Remarks,
-            Date: new Date().toISOString(),
-            CurrentStatus: "Pending for Approval",
-          },
-        ];
+    const currentApprover =
+      approverDetails.length > 0 ? approverDetails[0].Id : null;
 
-    return {
+    const payload: IChangeRequestPayload = {
       Title: "",
       RequestNo: requestData?.RequestNo || "",
       RequestedBy: requestData?.RequestedBy || "",
@@ -321,8 +414,27 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       AdditionalInformation: changeRequestData.AdditionalInformation,
       Remarks: changeRequestData.Remarks,
       Status: isDraft ? "Save as Draft" : "Pending for Approval",
-      WorkflowHistory: JSON.stringify(updatedHistory),
+      ApprovalMatrix: JSON.stringify(approverDetails),
+      CurrentApproverId: isDraft
+        ? requestData?.CurrentApproverId ?? null
+        : currentApprover,
     };
+
+    if (!isDraft) {
+      const newEntry: IWorkflowHistoryItem = {
+        CurrentApprover: requestData?.RequestedBy || props.userDisplayName,
+        ActionTaken: "Request Submitted",
+        Comment: changeRequestData.Remarks,
+        Date: new Date().toISOString(),
+        CurrentStatus: "Pending for Approval",
+      };
+
+      const updatedHistory = [...workflowHistory, newEntry];
+
+      payload.WorkflowHistory = JSON.stringify(updatedHistory);
+    }
+
+    return payload;
   };
 
   const folderExists = async (folderUrl: string): Promise<boolean> => {
@@ -447,7 +559,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       });
       return;
     }
-    
+
     if (!Urgencyofrequest) {
       Swal.fire({
         title: "Validation",
@@ -540,6 +652,21 @@ const EditRequest: React.FC<INbcProps> = (props) => {
         </div>
 
         <div className="req-body">
+          <div className="approval-ribbon">
+            <div className="ribbon-step initiator">
+              {requestData?.RequestedBy || props.userDisplayName}
+            </div>
+
+            {approverDetails.map((approver, index) => (
+              <div
+                key={index}
+                className={`ribbon-step ${getRibbonStepClass(approver.status)}`}
+              >
+                {approver.Name}
+              </div>
+            ))}
+          </div>
+
           <div className="form-container">
             <div className="section-heading">Requestor Details</div>
 

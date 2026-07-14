@@ -1193,4 +1193,73 @@
   }
 }
   //----------------------End Workflowhistory Table Styles -------//
+  //--------------------- Approval Ribbon ------------------------//
+.approval-ribbon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.ribbon-step {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+  height: 52px;
+  line-height: 52px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #bdbdbd;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 18px) 0,
+    100% 50%,
+    calc(100% - 18px) 100%,
+    0 100%,
+    18px 50%
+  );
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 18px 0 30px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.ribbon-step::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.ribbon-step.initiator,
+.ribbon-step.approved {
+  background: #16a34a;
+  color: #fff;
+}
+
+.ribbon-step.current {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.ribbon-step.pending {
+  background: #d1d5db;
+  color: #374151;
+}
+
+.ribbon-step.rejected {
+  background: #dc2626;
+  color: #fff;
+}
+  //--------------------- End Approval Ribbon --------------------//
 }

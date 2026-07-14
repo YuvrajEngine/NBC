@@ -87,13 +87,15 @@ const NewRequest: React.FC<INbcProps> = (props) => {
         props,
       );
 
-      const matrixApprovers = matrixData.map((item: any, index: number) => ({
-        Id: item.User?.Id,
-        Name: item.User?.Title,
-        Role: item.Role,
-        Level: baseApprovers.length + index + 1,
-        status: "",
-      }));
+      const matrixApprovers: IApproverDetails[] = (matrixData || [])
+        .filter((item: any) => item.User?.Id)
+        .map((item: any, index: number) => ({
+          Id: item.User.Id,
+          Name: item.User.Title,
+          Role: item.Role,
+          Level: baseApprovers.length + index + 1,
+          status: "",
+        }));
 
       const fullFlow = [...baseApprovers, ...matrixApprovers];
 
@@ -194,19 +196,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
       approverDetails.length > 0 ? approverDetails[0].Id : null;
     const allApproversJson = JSON.stringify(approverDetails);
 
-    const workflowHistory = isDraft
-      ? []
-      : [
-          {
-            CurrentApprover: employeeData.EmployeeName,
-            ActionTaken: "Request Submitted",
-            Comment: changeRequestData.Remarks,
-            Date: new Date().toISOString(),
-            CurrentStatus: "Submitted",
-          },
-        ];
-
-    return {
+    const payload: IChangeRequestPayload = {
       Title: "",
       RequestNo: requestNo,
       RequestedBy: employeeData.EmployeeName,
@@ -231,8 +221,21 @@ const NewRequest: React.FC<INbcProps> = (props) => {
       Status: isDraft ? "Save as Draft" : "Pending for Approval",
       CurrentApproverId: currentApprover,
       ApprovalMatrix: allApproversJson,
-      WorkflowHistory: JSON.stringify(workflowHistory),
     };
+
+    if (!isDraft) {
+      payload.WorkflowHistory = JSON.stringify([
+        {
+          CurrentApprover: employeeData.EmployeeName,
+          ActionTaken: "Request Submitted",
+          Comment: changeRequestData.Remarks,
+          Date: new Date().toISOString(),
+          CurrentStatus: "Pending for Approval",
+        },
+      ]);
+    }
+
+    return payload;
   };
 
   const extractItemId = (response: any): number | null => {
@@ -359,6 +362,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
       });
       return;
     }
+
     if (!Urgencyofrequest) {
       Swal.fire({
         title: "Validation",
@@ -456,6 +460,18 @@ const NewRequest: React.FC<INbcProps> = (props) => {
               your administrator before submitting a request.
             </div>
           )}
+
+          <div className="approval-ribbon">
+            <div className="ribbon-step current">
+              {props.userDisplayName}
+            </div>
+
+            {approverDetails.map((approver, index) => (
+              <div key={index} className="ribbon-step pending">
+                {approver.Name}
+              </div>
+            ))}
+          </div>
 
           <div className="form-container">
             <div className="section-heading">Requestor Details</div>

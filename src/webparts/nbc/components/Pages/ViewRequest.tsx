@@ -6,10 +6,19 @@ import type { INbcProps } from "../INbcProps";
 import logoPrimary from "../../assets/Images/NBC_LOGO.png";
 import userLogo from "../../assets/Images/UserAvatar.png";
 import SPCRUDOPS from "../../services/DAL/spcrudops";
+import EmployeeMasterOps from "../../services/BAL/EmployeeMaster";
 import "./CSS/NewRequest.scss";
 
 const CHANGE_REQUEST_LIST = "ChangeRequest";
 const DOCS_LIBRARY = "NBCDocs";
+
+interface IApproverDetails {
+  Id: number;
+  Name: string;
+  Role: string;
+  Level: number;
+  status: string;
+}
 
 interface IChangeRequestItem {
   Id: number;
@@ -31,6 +40,7 @@ interface IChangeRequestItem {
   AdditionalInformation: string;
   Remarks: string;
   WorkflowHistory: string;
+  ApprovalMatrix: string;
 }
 
 interface ISavedFile {
@@ -60,6 +70,83 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
   const [savedFiles, setSavedFiles] = React.useState<ISavedFile[]>([]);
   const [isAttachmentsOpen, setIsAttachmentsOpen] = React.useState(false);
   const [workflowHistory, setWorkflowHistory] = React.useState<IWorkflowHistoryItem[]>([]);
+  const [approverDetails, setApproverDetails] = React.useState<IApproverDetails[]>([]);
+
+  const parseApprovalMatrix = (
+    item: IChangeRequestItem | null,
+  ): IApproverDetails[] => {
+    try {
+      return item?.ApprovalMatrix ? JSON.parse(item.ApprovalMatrix) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const buildApprovalFlowFallback = async (
+    employeeEmail: string,
+    fallbackRMName: string,
+  ): Promise<IApproverDetails[]> => {
+    try {
+      const employeeMasterOps = EmployeeMasterOps();
+      const sp = await SPCRUDOPS();
+
+      const empResponse = await employeeMasterOps.getEmployeeMasterData(
+        `EmployeeEmail eq '${employeeEmail}'`,
+        "",
+        props,
+      );
+
+      const emp = empResponse?.[0];
+      const baseApprovers: IApproverDetails[] = [];
+
+      if (emp?.ReportingManagerId) {
+        baseApprovers.push({
+          Id: emp.ReportingManagerId,
+          Name: emp.ReportingManager || fallbackRMName,
+          Role: "RM",
+          Level: 1,
+          status: "Pending",
+        });
+      }
+
+      const matrixData = await sp.getData(
+        "ApprovalMatrix",
+        "Title,Role,Level,User/Id,User/Title",
+        "User",
+        `Status eq 'Active'`,
+        { column: "Level", isAscending: true },
+        props,
+      );
+
+      const matrixApprovers: IApproverDetails[] = (matrixData || [])
+        .filter((item: any) => item.User?.Id)
+        .map((item: any, index: number) => ({
+          Id: item.User.Id,
+          Name: item.User.Title,
+          Role: item.Role,
+          Level: baseApprovers.length + index + 1,
+          status: "",
+        }));
+
+      const fullFlow = [...baseApprovers, ...matrixApprovers];
+
+      if (fullFlow.length > 0) {
+        fullFlow[0].status = "Pending";
+      }
+
+      return fullFlow;
+    } catch (error) {
+      console.error("Error building fallback approval flow:", error);
+      return [];
+    }
+  };
+
+  const getRibbonStepClass = (status: string): string => {
+    if (status === "Approved") return "approved";
+    if (status === "Rejected") return "rejected";
+    if (status === "Pending") return "current";
+    return "pending";
+  };
 
   const getRequestDetails = async (): Promise<void> => {
     setIsLoading(true);
@@ -70,12 +157,24 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory,ApprovalMatrix",
         "",
         props,
       );
 
       setRequestData(response || null);
+
+      const parsedApprovers = parseApprovalMatrix(response);
+
+      if (parsedApprovers.length > 0) {
+        setApproverDetails(parsedApprovers);
+      } else if (response) {
+        const fallbackApprovers = await buildApprovalFlowFallback(
+          response.EmployeeEmail,
+          response.ReportingManager,
+        );
+        setApproverDetails(fallbackApprovers);
+      }
 
       try {
         setWorkflowHistory(
@@ -177,13 +276,28 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
         </div>
 
         <div className="req-body">
+          <div className="approval-ribbon">
+            <div className="ribbon-step initiator">
+              {requestData?.RequestedBy || props.userDisplayName}
+            </div>
+
+            {approverDetails.map((approver, index) => (
+              <div
+                key={index}
+                className={`ribbon-step ${getRibbonStepClass(approver.status)}`}
+              >
+                {approver.Name}
+              </div>
+            ))}
+          </div>
+
           <div className="form-container">
             <div className="section-heading">Requestor Details</div>
 
             <div className="requestor-grid">
               <ReadOnlyField label="Requested By" value={requestData?.RequestedBy} />
-              <ReadOnlyField label="Email" value={requestData?.EmployeeSAPNumberID} />
-              <ReadOnlyField label="Employee Email" value={requestData?.EmployeeEmail} />
+              <ReadOnlyField label="Email" value={requestData?.EmployeeEmail} />
+              <ReadOnlyField label="Employee SAP Number/ID" value={requestData?.EmployeeSAPNumberID} />
               <ReadOnlyField label="Department" value={requestData?.Department} />
               <ReadOnlyField label="Grade" value={requestData?.Grade} />
               <ReadOnlyField label="Cost Centre" value={requestData?.CostCentre} />
@@ -260,15 +374,6 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
                 <label>Additional Information</label>
                 <textarea
                   value={isLoading ? "Loading..." : requestData?.AdditionalInformation || ""}
-                  disabled
-                />
-              </div>
-
-              <div className="requestor-field col-span-2">
-                <label>Remarks</label>
-                <textarea
-                  className="remarks-textarea"
-                  value={isLoading ? "Loading..." : requestData?.Remarks || ""}
                   disabled
                 />
               </div>
