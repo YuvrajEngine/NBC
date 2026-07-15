@@ -337,7 +337,6 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
 
           <div className="header-right">
             <div className="user-name-new">
-              <span className="welcome-text">Welcome, </span>
               {props.userDisplayName}
             </div>
             <div className="user-icon">
