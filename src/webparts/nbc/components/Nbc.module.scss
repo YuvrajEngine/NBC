@@ -18,23 +18,16 @@
   a {
     text-decoration: none;
     color: "[theme:link, default:#03787c]";
-    color: var(
-      --link
-    ); // note: CSS Custom Properties support is limited to modern browsers only
+    color: var(--link);
 
     &:hover {
       text-decoration: underline;
       color: "[theme:linkHovered, default: #014446]";
-      color: var(
-        --linkHovered
-      ); // note: CSS Custom Properties support is limited to modern browsers only
+      color: var(--linkHovered);
     }
   }
 }
 :global {
-//------------------- UserDashboard Style -------------------//
-
-  // SHAREPOINT MODERN PAGE FULL WIDTH FIX
   #spCommandBar,
   #spSiteHeader,
   #spLeftNav,
@@ -140,9 +133,7 @@
   body {
     overflow-x: hidden !important;
   }
-  /* ===================== END SHAREPOINT FIX ===================== */
 
-  /* DASHBOARD OUTER WRAPPER */
   .dashboard-wrapper {
     display: flex;
     min-height: 100vh;
@@ -154,7 +145,6 @@
     box-sizing: border-box;
   }
 
-  /* SIDEBAR */
   .dashboard-sidebar {
     width: 190px;
     background: #14335e;
@@ -203,10 +193,6 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
   }
 
   .sidebar-caret {
@@ -252,7 +238,6 @@
     overflow-x: hidden;
   }
 
-  /* HEADER */
   .dashboard-header {
     display: flex;
     align-items: center;
@@ -323,7 +308,6 @@
     box-sizing: border-box;
   }
 
-  /* FILTER ROW */
   .dashboard-filter-card {
     background: #ffffff;
     border-radius: 8px;
@@ -416,7 +400,6 @@
     }
   }
 
-  /* TABLE */
   .table-card {
     background: #ffffff;
     border-radius: 8px;
@@ -526,7 +509,6 @@
     font-size: 14px;
   }
 
-  /* PAGINATION */
   .pagination-wrapper {
     display: flex;
     justify-content: center;
@@ -561,10 +543,6 @@
     color: #0b1f3a;
     border: 1px solid #0b1f3a;
   }
-//-------------------- NewRequest Style --------------------//
-  // ─────────────────────────────────────────────────────────────
-  // MAIN PAGE LAYOUT
-  // ─────────────────────────────────────────────────────────────
 
   .req-wrapper {
     display: flex;
@@ -575,10 +553,6 @@
   .required {
     color: #ff0000;
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // SIDEBAR
-  // ─────────────────────────────────────────────────────────────
 
   .req-sidebar {
     width: 220px;
@@ -598,10 +572,6 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // MAIN CONTENT
-  // ─────────────────────────────────────────────────────────────
-
   .req-main {
     flex: 1;
     display: flex;
@@ -609,10 +579,6 @@
     overflow-y: auto;
     background: #f5f6fa;
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // HEADER
-  // ─────────────────────────────────────────────────────────────
 
   .req-header {
     display: flex;
@@ -658,10 +624,6 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // BODY
-  // ─────────────────────────────────────────────────────────────
-
   .req-body {
     padding: 24px;
     display: flex;
@@ -678,20 +640,12 @@
     justify-content: center;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // FORM CARD
-  // ─────────────────────────────────────────────────────────────
-
   .form-container {
     background: #ffffff;
     border-radius: 8px;
     padding: 20px 24px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // SECTION HEADINGS
-  // ─────────────────────────────────────────────────────────────
 
   .section-heading {
     font-size: 15px;
@@ -709,10 +663,6 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // REQUESTOR DETAILS GRID
-  // ─────────────────────────────────────────────────────────────
-
   .requestor-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -728,10 +678,6 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CHANGE REQUEST DETAILS GRID
-  // ─────────────────────────────────────────────────────────────
-
   .basic-po-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -741,10 +687,6 @@
       grid-template-columns: 1fr;
     }
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // FIELD STYLING
-  // ─────────────────────────────────────────────────────────────
 
   .requestor-field {
     display: flex;
@@ -833,10 +775,6 @@
       font-size: 16px;
     }
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // ATTACHMENTS DROPDOWN (VIEW REQUEST)
-  // ─────────────────────────────────────────────────────────────
 
   .attachments-dropdown {
     position: relative;
@@ -948,10 +886,6 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // BOTTOM ACTION BUTTONS
-  // ─────────────────────────────────────────────────────────────
-
   .bottom-btn-wrapper {
     display: flex;
     justify-content: center;
@@ -1041,8 +975,6 @@
     color: #d9534f;
   }
 }
-  //-------------------- End NewRequest Style --------------------//
-  //-------------------- Approval Form Extra Styles ---------------//
   .reject-btn-new {
     height: 38px;
     min-width: 130px;
@@ -1116,8 +1048,7 @@
       box-shadow: 0 0 0 2px rgba(20, 51, 94, 0.15);
     }
   }
-  //-------------------- End Approval Form Extra Styles ------------//
-  //-------------------- Workflowhistory Table Styles ------------//
+
   .workflow-history-container {
   margin-top: 20px;
 }
@@ -1192,8 +1123,6 @@
     padding: 16px;
   }
 }
-  //----------------------End Workflowhistory Table Styles -------//
-  //--------------------- Approval Ribbon ------------------------//
 .approval-ribbon {
   display: flex;
   flex-wrap: wrap;
@@ -1261,5 +1190,36 @@
   background: #dc2626;
   color: #fff;
 }
-  //--------------------- End Approval Ribbon --------------------//
+  .black-loader-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.6);
+    z-index: 9999;
+  }
+
+  .loader {
+    --d: 22px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    color: #25b09b;
+    box-shadow:
+      calc(1*var(--d))      calc(0*var(--d))     0 0,
+      calc(0.707*var(--d))  calc(0.707*var(--d)) 0 1px,
+      calc(0*var(--d))      calc(1*var(--d))     0 2px,
+      calc(-0.707*var(--d)) calc(0.707*var(--d)) 0 3px,
+      calc(-1*var(--d))     calc(0*var(--d))     0 4px,
+      calc(-0.707*var(--d)) calc(-0.707*var(--d))0 5px,
+      calc(0*var(--d))      calc(-1*var(--d))    0 6px;
+    animation: l27 1s infinite steps(8);
+  }
+
+  @keyframes l27 {
+    100% {
+      transform: rotate(1turn);
+    }
+  }
 }

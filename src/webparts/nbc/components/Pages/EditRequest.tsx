@@ -52,6 +52,7 @@ interface IChangeRequestItem {
   WorkflowHistory: string;
   ApprovalMatrix: string;
   CurrentApproverId: number | null;
+  Status: string;
 }
 
 interface ISavedFile {
@@ -69,6 +70,13 @@ interface IWorkflowHistoryItem {
   Comment?: string;
   Remarks?: string;
   CurrentStatus?: string;
+}
+
+type RibbonState = "approved" | "current" | "rejected" | "pending";
+
+interface IRibbonSteps {
+  initiatorState: RibbonState;
+  approverStates: RibbonState[];
 }
 
 const EditRequest: React.FC<INbcProps> = (props) => {
@@ -172,10 +180,71 @@ const EditRequest: React.FC<INbcProps> = (props) => {
     }
   };
 
-  const getRibbonStepClass = (status: string): string => {
-    if (status === "Approved") return "approved";
-    if (status === "Rejected") return "rejected";
-    if (status === "Pending") return "current";
+  const getRibbonSteps = (
+    approvers: IApproverDetails[],
+    currentApproverId: number | null,
+    overallStatus: string | undefined,
+  ): IRibbonSteps => {
+    const normalize = (s?: string): string => (s || "").trim().toLowerCase();
+    const normalizedStatus = normalize(overallStatus);
+
+    if (normalizedStatus === "save as draft" || normalizedStatus === "send back") {
+      return {
+        initiatorState: "current",
+        approverStates: approvers.map(() => "pending"),
+      };
+    }
+
+    if (approvers.length === 0) {
+      return { initiatorState: "approved", approverStates: [] };
+    }
+
+    const rejectedIndex = approvers.findIndex(
+      (a) => normalize(a.status) === "reject" || normalize(a.status) === "rejected",
+    );
+
+    if (rejectedIndex !== -1) {
+      return {
+        initiatorState: "approved",
+        approverStates: approvers.map((_, index) => {
+          if (index < rejectedIndex) return "approved";
+          if (index === rejectedIndex) return "rejected";
+          return "pending";
+        }),
+      };
+    }
+
+    let currentIndex = approvers.findIndex(
+      (a) => currentApproverId != null && Number(a.Id) === Number(currentApproverId),
+    );
+
+    if (currentIndex === -1) {
+      currentIndex = approvers.findIndex((a) => normalize(a.status) === "pending");
+    }
+
+    if (currentIndex !== -1) {
+      return {
+        initiatorState: "approved",
+        approverStates: approvers.map((_, index) => {
+          if (index < currentIndex) return "approved";
+          if (index === currentIndex) return "current";
+          return "pending";
+        }),
+      };
+    }
+
+    const allApproved = approvers.every((a) => normalize(a.status) === "approved");
+
+    return {
+      initiatorState: "approved",
+      approverStates: approvers.map(() => (allApproved ? "approved" : "pending")),
+    };
+  };
+
+  const getRibbonStepClass = (state: RibbonState): string => {
+    if (state === "approved") return "approved";
+    if (state === "rejected") return "rejected";
+    if (state === "current") return "current";
     return "pending";
   };
 
@@ -188,7 +257,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory,ApprovalMatrix,CurrentApproverId",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory,ApprovalMatrix,CurrentApproverId,Status",
         "",
         props,
       );
@@ -291,6 +360,16 @@ const EditRequest: React.FC<INbcProps> = (props) => {
   }, [id]);
 
   const toggleAttachments = (): void => setIsAttachmentsOpen((prev) => !prev);
+
+  const ribbonSteps = React.useMemo(
+    () =>
+      getRibbonSteps(
+        approverDetails,
+        requestData?.CurrentApproverId ?? null,
+        requestData?.Status,
+      ),
+    [approverDetails, requestData?.CurrentApproverId, requestData?.Status],
+  );
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -653,14 +732,16 @@ const EditRequest: React.FC<INbcProps> = (props) => {
 
         <div className="req-body">
           <div className="approval-ribbon">
-            <div className="ribbon-step initiator">
+            <div
+              className={`ribbon-step ${getRibbonStepClass(ribbonSteps.initiatorState)}`}
+            >
               {requestData?.RequestedBy || props.userDisplayName}
             </div>
 
             {approverDetails.map((approver, index) => (
               <div
                 key={index}
-                className={`ribbon-step ${getRibbonStepClass(approver.status)}`}
+                className={`ribbon-step ${getRibbonStepClass(ribbonSteps.approverStates[index])}`}
               >
                 {approver.Name}
               </div>

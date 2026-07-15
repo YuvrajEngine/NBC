@@ -46,6 +46,8 @@ interface IWorkflowHistoryItem {
   CurrentStatus?: string;
 }
 
+type RibbonState = "approved" | "current" | "rejected" | "pending";
+
 const ApprovalForm: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
@@ -80,10 +82,51 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
     }
   };
 
-  const getRibbonStepClass = (status: string): string => {
-    if (status === "Approved") return "approved";
-    if (status === "Rejected") return "rejected";
-    if (status === "Pending") return "current";
+  const getApproverRibbonStates = (
+    approvers: IApproverDetails[],
+    currentApproverId: number | null,
+  ): RibbonState[] => {
+    if (approvers.length === 0) return [];
+
+    const normalize = (s?: string): string => (s || "").trim().toLowerCase();
+
+    const rejectedIndex = approvers.findIndex(
+      (a) => normalize(a.status) === "reject" || normalize(a.status) === "rejected",
+    );
+
+    if (rejectedIndex !== -1) {
+      return approvers.map((_, index) => {
+        if (index < rejectedIndex) return "approved";
+        if (index === rejectedIndex) return "rejected";
+        return "pending";
+      });
+    }
+
+    let currentIndex = approvers.findIndex(
+      (a) => currentApproverId != null && Number(a.Id) === Number(currentApproverId),
+    );
+
+    if (currentIndex === -1) {
+      currentIndex = approvers.findIndex((a) => normalize(a.status) === "pending");
+    }
+
+    if (currentIndex !== -1) {
+      return approvers.map((_, index) => {
+        if (index < currentIndex) return "approved";
+        if (index === currentIndex) return "current";
+        return "pending";
+      });
+    }
+
+    const allApproved = approvers.every((a) => normalize(a.status) === "approved");
+
+    return approvers.map(() => (allApproved ? "approved" : "pending"));
+  };
+
+  const getRibbonStepClass = (state: RibbonState): string => {
+    if (state === "approved") return "approved";
+    if (state === "rejected") return "rejected";
+    if (state === "current") return "current";
     return "pending";
   };
 
@@ -248,8 +291,13 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
 
   const toggleAttachments = (): void => setIsAttachmentsOpen((prev) => !prev);
 
+  const ribbonStates = React.useMemo(
+    () => getApproverRibbonStates(approverDetails, effectiveCurrentApproverId),
+    [approverDetails, effectiveCurrentApproverId],
+  );
+
   const advanceApproval = (
-    action: "Approved" | "Rejected",
+    action: "Approved" | "Reject",
     comment: string,
   ) => {
     const approverList = approverDetails.map((approver) => ({ ...approver }));
@@ -285,7 +333,7 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
         newStatus = "Approved";
       }
     } else {
-      newStatus = "Rejected";
+      newStatus = "Reject";
     }
 
     const updatedHistory = [
@@ -403,7 +451,7 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
     setIsSaving(true);
 
     try {
-      const payload = advanceApproval("Rejected", approverRemarks);
+      const payload = advanceApproval("Reject", approverRemarks);
 
       if (!payload) {
         Swal.fire({
@@ -422,7 +470,7 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
 
       Swal.fire({
         title: "Rejected",
-        text: "Request rejected.",
+        text: "Request Rejected Successfully.",
         icon: "success",
       }).then(() => {
         history.push("/ApprovalDashboard");
@@ -480,17 +528,17 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
         ...workflowHistory,
         {
           CurrentApprover: requestData.RequestedBy,
-          ActionTaken: "Sent Back",
+          ActionTaken: "Send Back",
           Comment: approverRemarks,
           Date: new Date().toISOString(),
-          CurrentStatus: "Sent Back",
+          CurrentStatus: "Send Back",
         },
       ];
 
       await changeRequestOps.updateChangeRequest(
         requestData.Id as number,
         {
-          Status: "Sent Back",
+          Status: "Send Back",
           CurrentApproverId: rmApproverId,
           ApprovalMatrix: JSON.stringify(resetMatrix),
           WorkflowHistory: JSON.stringify(updatedHistory),
@@ -570,7 +618,7 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
             {approverDetails.map((approver, index) => (
               <div
                 key={index}
-                className={`ribbon-step ${getRibbonStepClass(approver.status)}`}
+                className={`ribbon-step ${getRibbonStepClass(ribbonStates[index])}`}
               >
                 {approver.Name}
               </div>

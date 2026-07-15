@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory, useLocation, useParams } from "react-router-dom";
 import { faPaperclip, faFileAlt, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { INbcProps } from "../INbcProps";
@@ -41,6 +41,8 @@ interface IChangeRequestItem {
   Remarks: string;
   WorkflowHistory: string;
   ApprovalMatrix: string;
+  CurrentApproverId: number | null;
+  Status: string;
 }
 
 interface ISavedFile {
@@ -60,9 +62,21 @@ interface IWorkflowHistoryItem {
   CurrentStatus?: string;
 }
 
+interface IViewRequestLocationState {
+  from?: string;
+}
+
+type RibbonState = "approved" | "current" | "rejected" | "pending";
+
+interface IRibbonSteps {
+  initiatorState: RibbonState;
+  approverStates: RibbonState[];
+}
+
 const ViewRequest: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation<IViewRequestLocationState>();
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [isFilesLoading, setIsFilesLoading] = React.useState(false);
@@ -71,6 +85,9 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
   const [isAttachmentsOpen, setIsAttachmentsOpen] = React.useState(false);
   const [workflowHistory, setWorkflowHistory] = React.useState<IWorkflowHistoryItem[]>([]);
   const [approverDetails, setApproverDetails] = React.useState<IApproverDetails[]>([]);
+
+  const exitPath =
+    location.state?.from === "ApprovalDashboard" ? "/ApprovalDashboard" : "/Dashboard";
 
   const parseApprovalMatrix = (
     item: IChangeRequestItem | null,
@@ -128,23 +145,111 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
           status: "",
         }));
 
-      const fullFlow = [...baseApprovers, ...matrixApprovers];
-
-      if (fullFlow.length > 0) {
-        fullFlow[0].status = "Pending";
-      }
-
-      return fullFlow;
+      return [...baseApprovers, ...matrixApprovers];
     } catch (error) {
       console.error("Error building fallback approval flow:", error);
       return [];
     }
   };
 
-  const getRibbonStepClass = (status: string): string => {
-    if (status === "Approved") return "approved";
-    if (status === "Rejected") return "rejected";
-    if (status === "Pending") return "current";
+  const getRibbonSteps = (
+    approvers: IApproverDetails[],
+    currentApproverId: number | null,
+    overallStatus: string | undefined,
+    history: IWorkflowHistoryItem[],
+  ): IRibbonSteps => {
+    const normalize = (s?: string): string => (s || "").trim().toLowerCase();
+    const normalizedStatus = normalize(overallStatus);
+
+    if (normalizedStatus === "save as draft" || normalizedStatus === "send back") {
+      return {
+        initiatorState: "current",
+        approverStates: approvers.map(() => "pending"),
+      };
+    }
+
+    if (approvers.length === 0) {
+      return { initiatorState: "approved", approverStates: [] };
+    }
+
+    let rejectedIndex = -1;
+
+    if (normalizedStatus === "reject" || normalizedStatus === "rejected") {
+      rejectedIndex = approvers.findIndex(
+        (a) => currentApproverId != null && Number(a.Id) === Number(currentApproverId),
+      );
+
+      if (rejectedIndex === -1) {
+        rejectedIndex = approvers.findIndex(
+          (a) => normalize(a.status) === "reject" || normalize(a.status) === "rejected",
+        );
+      }
+
+      if (rejectedIndex === -1) {
+        const rejectionEntry = [...history].reverse().find((entry) => {
+          const action = normalize(entry.ActionTaken || entry.Action);
+          return action === "reject" || action === "rejected";
+        });
+
+        const rejecterName = rejectionEntry?.CurrentApprover || rejectionEntry?.ActionBy;
+
+        if (rejecterName) {
+          rejectedIndex = approvers.findIndex(
+            (a) => normalize(a.Name) === normalize(rejecterName),
+          );
+        }
+      }
+    }
+
+    if (rejectedIndex !== -1) {
+      return {
+        initiatorState: "approved",
+        approverStates: approvers.map((_, index) => {
+          if (index < rejectedIndex) return "approved";
+          if (index === rejectedIndex) return "rejected";
+          return "pending";
+        }),
+      };
+    }
+
+    if (normalizedStatus === "approved") {
+      return {
+        initiatorState: "approved",
+        approverStates: approvers.map(() => "approved"),
+      };
+    }
+
+    let currentIndex = approvers.findIndex(
+      (a) => currentApproverId != null && Number(a.Id) === Number(currentApproverId),
+    );
+
+    if (currentIndex === -1) {
+      currentIndex = approvers.findIndex((a) => normalize(a.status) === "pending");
+    }
+
+    if (currentIndex !== -1) {
+      return {
+        initiatorState: "approved",
+        approverStates: approvers.map((_, index) => {
+          if (index < currentIndex) return "approved";
+          if (index === currentIndex) return "current";
+          return "pending";
+        }),
+      };
+    }
+
+    const allApproved = approvers.every((a) => normalize(a.status) === "approved");
+
+    return {
+      initiatorState: "approved",
+      approverStates: approvers.map(() => (allApproved ? "approved" : "pending")),
+    };
+  };
+
+  const getRibbonStepClass = (state: RibbonState): string => {
+    if (state === "approved") return "approved";
+    if (state === "rejected") return "rejected";
+    if (state === "current") return "current";
     return "pending";
   };
 
@@ -157,7 +262,7 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
       const response = await spCrudOps.getItemData(
         CHANGE_REQUEST_LIST,
         Number(id),
-        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory,ApprovalMatrix",
+        "Id,RequestNo,RequestedBy,ReportingManager,EmployeeSAPNumberID,EmployeeEmail,CostCentre,Department,Grade,ContactNumber,ProgramConfigurationChange,RequestType,RequestDescriptionwithReason,ProgramName,Tcode,Urgencyofrequest,AdditionalInformation,Remarks,WorkflowHistory,ApprovalMatrix,CurrentApproverId,Status",
         "",
         props,
       );
@@ -239,6 +344,17 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
 
   const toggleAttachments = (): void => setIsAttachmentsOpen((prev) => !prev);
 
+  const ribbonSteps = React.useMemo(
+    () =>
+      getRibbonSteps(
+        approverDetails,
+        requestData?.CurrentApproverId ?? null,
+        requestData?.Status,
+        workflowHistory,
+      ),
+    [approverDetails, requestData?.CurrentApproverId, requestData?.Status, workflowHistory],
+  );
+
   const ReadOnlyField: React.FC<{ label: string; value?: string | number | null }> = ({
     label,
     value,
@@ -277,14 +393,16 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
 
         <div className="req-body">
           <div className="approval-ribbon">
-            <div className="ribbon-step initiator">
+            <div
+              className={`ribbon-step ${getRibbonStepClass(ribbonSteps.initiatorState)}`}
+            >
               {requestData?.RequestedBy || props.userDisplayName}
             </div>
 
             {approverDetails.map((approver, index) => (
               <div
                 key={index}
-                className={`ribbon-step ${getRibbonStepClass(approver.status)}`}
+                className={`ribbon-step ${getRibbonStepClass(ribbonSteps.approverStates[index])}`}
               >
                 {approver.Name}
               </div>
@@ -417,7 +535,7 @@ const ViewRequest: React.FC<INbcProps> = (props) => {
           </div>
 
           <div className="bottom-btn-wrapper">
-            <button className="exit-btn" onClick={() => history.push("/Dashboard")}>
+            <button className="exit-btn" onClick={() => history.push(exitPath)}>
               Exit
             </button>
           </div>

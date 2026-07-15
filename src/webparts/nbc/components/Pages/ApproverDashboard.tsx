@@ -24,17 +24,34 @@ interface IApproverDetails {
   status: string;
 }
 
-type ApprovalTab = "Pending" | "Approved" | "Rejected";
+interface IWorkflowHistoryItem {
+  CurrentApprover?: string;
+  ActionBy?: string;
+  ActionTaken?: string;
+  Action?: string;
+  Date?: string;
+  ActionDate?: string;
+  Comment?: string;
+  Remarks?: string;
+  CurrentStatus?: string;
+}
+
+type ApprovalTab = "Pending Request" | "Approved" | "Rejected";
 
 const ApprovalDashboard: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const changeRequestOps = React.useMemo(() => ChangeRequestOps(), []);
   const [expandedMenu, setExpandedMenu] = React.useState<string | null>(
-    "approvalDashboard",
+    "approverDashboard",
   );
-  const [activeTab, setActiveTab] = React.useState<ApprovalTab>("Pending");
+
+  const [activeTab, setActiveTab] =
+    React.useState<ApprovalTab>("Pending Request");
   const [isLoading, setIsLoading] = React.useState(false);
   const [dashboardData, setDashboardData] = React.useState<
+    IChangeRequestItem[]
+  >([]);
+  const [filteredDashboardData, setFilteredDashboardData] = React.useState<
     IChangeRequestItem[]
   >([]);
   const [searchText, setSearchText] = React.useState("");
@@ -48,7 +65,9 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
     setExpandedMenu((prev) => (prev === menu ? null : menu));
   };
 
-  const parseApprovalMatrix = (item: IChangeRequestItem): IApproverDetails[] => {
+  const parseApprovalMatrix = (
+    item: IChangeRequestItem,
+  ): IApproverDetails[] => {
     try {
       return item.ApprovalMatrix ? JSON.parse(item.ApprovalMatrix) : [];
     } catch {
@@ -56,7 +75,58 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
     }
   };
 
-  const getApprovalDashboardData = async (tab: ApprovalTab): Promise<void> => {
+  const parseWorkflowHistory = (
+    item: IChangeRequestItem,
+  ): IWorkflowHistoryItem[] => {
+    try {
+      const raw = (item as unknown as { WorkflowHistory?: string })
+        .WorkflowHistory;
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const userTookAction = (
+    item: IChangeRequestItem,
+    action: "Approved" | "Reject",
+  ): boolean => {
+    const matchPrefix = action === "Approved" ? "approv" : "reject";
+
+    const matrixHit =
+      currentUserId != null &&
+      parseApprovalMatrix(item).some((entry) => {
+        if (Number(entry.Id) !== Number(currentUserId)) {
+          return false;
+        }
+
+        const status = entry.status?.trim().toLowerCase() || "";
+        return status.startsWith(matchPrefix);
+      });
+
+    if (matrixHit) {
+      return true;
+    }
+
+    const displayName = props.userDisplayName?.trim().toLowerCase() || "";
+
+    if (!displayName) {
+      return false;
+    }
+
+    return parseWorkflowHistory(item).some((entry) => {
+      const actionBy = (entry.CurrentApprover || entry.ActionBy || "")
+        .trim()
+        .toLowerCase();
+      const actionTaken = (entry.ActionTaken || entry.Action || "")
+        .trim()
+        .toLowerCase();
+
+      return actionBy === displayName && actionTaken.startsWith(matchPrefix);
+    });
+  };
+
+  const getApprovalDashboardData = async (): Promise<void> => {
     setIsLoading(true);
 
     try {
@@ -66,33 +136,7 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
         props,
       );
 
-      let scopedData = response || [];
-
-      if (tab === "Pending") {
-        scopedData = scopedData.filter(
-          (item) =>
-            item.Status === "Pending for Approval" &&
-            item.CurrentApproverId === currentUserId,
-        );
-      } else if (tab === "Approved") {
-        scopedData = scopedData.filter((item) => {
-          const approvers = parseApprovalMatrix(item);
-
-          return approvers.some(
-            (a) => a.Id === currentUserId && a.status === "Approved",
-          );
-        });
-      } else {
-        scopedData = scopedData.filter((item) => {
-          const approvers = parseApprovalMatrix(item);
-
-          return approvers.some(
-            (a) => a.Id === currentUserId && a.status === "Rejected",
-          );
-        });
-      }
-
-      setDashboardData(scopedData);
+      setDashboardData(response || []);
     } catch (error) {
       console.error("Approval dashboard fetch error:", error);
     } finally {
@@ -102,9 +146,32 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
 
   React.useEffect(() => {
     if (props.userEmail) {
-      getApprovalDashboardData(activeTab);
+      getApprovalDashboardData();
     }
-  }, [props.userEmail, activeTab]);
+  }, [props.userEmail]);
+
+  React.useEffect(() => {
+    let data = [...dashboardData];
+
+    if (activeTab === "Pending Request") {
+      data = data.filter(
+        (item) =>
+          item.Status === "Pending for Approval" &&
+          currentUserId != null &&
+          Number(item.CurrentApproverId) === Number(currentUserId),
+      );
+    }
+
+    if (activeTab === "Approved") {
+      data = data.filter((item) => userTookAction(item, "Approved"));
+    }
+
+    if (activeTab === "Rejected") {
+      data = data.filter((item) => userTookAction(item, "Reject"));
+    }
+
+    setFilteredDashboardData(data);
+  }, [dashboardData, activeTab, currentUserId]);
 
   const handleTabClick = (tab: ApprovalTab): void => {
     setActiveTab(tab);
@@ -113,12 +180,12 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
 
   const filteredData = React.useMemo(() => {
     if (!searchText.trim()) {
-      return dashboardData;
+      return filteredDashboardData;
     }
 
     const search = searchText.toLowerCase();
 
-    return dashboardData.filter(
+    return filteredDashboardData.filter(
       (item) =>
         item.RequestNo?.toLowerCase().includes(search) ||
         item.RequestType?.toLowerCase().includes(search) ||
@@ -126,7 +193,7 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
         item.Tcode?.toLowerCase().includes(search) ||
         item.RequestedBy?.toLowerCase().includes(search),
     );
-  }, [dashboardData, searchText]);
+  }, [filteredDashboardData, searchText]);
 
   React.useEffect(() => {
     setCurrentPage(1);
@@ -161,7 +228,7 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
     <section className="dashboard-wrapper">
       {isLoading && (
         <div className="black-loader-overlay">
-          <div className="black-spinner" />
+          <div className="loader" />
         </div>
       )}
 
@@ -174,21 +241,12 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
           <div className="sidebar-item-group">
             <div
               className="sidebar-item"
-              onClick={() => history.push("/Dashboard")}
+              onClick={() => toggleMenu("requesterDashboard")}
             >
-              <span>My Request</span>
-            </div>
-          </div>
-
-          <div className="sidebar-item-group">
-            <div
-              className="sidebar-item"
-              onClick={() => toggleMenu("approvalDashboard")}
-            >
-              <span>Approval Dashboard</span>
+              <span>Requester Dashboard</span>
               <FontAwesomeIcon
                 icon={
-                  expandedMenu === "approvalDashboard"
+                  expandedMenu === "requesterDashboard"
                     ? faChevronDown
                     : faChevronRight
                 }
@@ -196,13 +254,53 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
               />
             </div>
 
-            {expandedMenu === "approvalDashboard" && (
+            {expandedMenu === "requesterDashboard" && (
               <div className="sidebar-submenu">
                 <div
-                  className={`sidebar-subitem ${activeTab === "Pending" ? "active-tab" : ""}`}
-                  onClick={() => handleTabClick("Pending")}
+                  className="sidebar-subitem"
+                  onClick={() => history.push("/Dashboard")}
                 >
-                  Pending
+                  My Request
+                </div>
+                <div
+                  className="sidebar-subitem"
+                  onClick={() => history.push("/Dashboard")}
+                >
+                  Approved
+                </div>
+                <div
+                  className="sidebar-subitem"
+                  onClick={() => history.push("/Dashboard")}
+                >
+                  Rejected
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="sidebar-item-group">
+            <div
+              className="sidebar-item"
+              onClick={() => toggleMenu("approverDashboard")}
+            >
+              <span>Approver Dashboard</span>
+              <FontAwesomeIcon
+                icon={
+                  expandedMenu === "approverDashboard"
+                    ? faChevronDown
+                    : faChevronRight
+                }
+                className="sidebar-caret"
+              />
+            </div>
+
+            {expandedMenu === "approverDashboard" && (
+              <div className="sidebar-submenu">
+                <div
+                  className={`sidebar-subitem ${activeTab === "Pending Request" ? "active-tab" : ""}`}
+                  onClick={() => handleTabClick("Pending Request")}
+                >
+                  Pending Request
                 </div>
                 <div
                   className={`sidebar-subitem ${activeTab === "Approved" ? "active-tab" : ""}`}
@@ -234,7 +332,7 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
           </div>
 
           <div className="page-header">
-            <h2 className="page-title">Approval Dashboard</h2>
+            <h2 className="page-title">Change Request Management</h2>
           </div>
 
           <div className="header-right">
@@ -305,13 +403,18 @@ const ApprovalDashboard: React.FC<INbcProps> = (props) => {
                               className="action-btn view-btn"
                               title="View"
                               onClick={() =>
-                                history.push(`/ViewRequest/${item.Id}`)
+                                history.push({
+                                  pathname: `/ViewRequest/${item.Id}`,
+                                  state: {
+                                    from: "ApprovalDashboard",
+                                  },
+                                })
                               }
                             >
                               <FontAwesomeIcon icon={faEye} />
                             </button>
 
-                            {activeTab === "Pending" && (
+                            {activeTab === "Pending Request" && (
                               <button
                                 className="action-btn edit-btn"
                                 title="Approval Form"

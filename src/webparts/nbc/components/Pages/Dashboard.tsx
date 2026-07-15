@@ -1,18 +1,31 @@
 import * as React from "react";
 import { useHistory } from "react-router-dom";
 import type { INbcProps } from "../INbcProps";
-import {faBars,faPlus,faEye,faPenSquare,faChevronDown,faChevronRight,} from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faPlus,
+  faEye,
+  faPenSquare,
+  faChevronDown,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import logoPrimary from "../../assets/Images/NBC_LOGO.png";
 import logoSecondary from "../../assets/Images/CKA_LOGO.png";
 import userLogo from "../../assets/Images/UserAvatar.png";
-import ChangeRequestOps, {IChangeRequestItem,} from "../../services/BAL/ChangeRequestMaster";
+import ChangeRequestOps, {
+  IChangeRequestItem,
+} from "../../services/BAL/ChangeRequestMaster";
+
+type RequesterTab = "MyRequest" | "Approved" | "Rejected";
 
 const Dashboard: React.FC<INbcProps> = (props) => {
   const history = useHistory();
   const changeRequestOps = React.useMemo(() => ChangeRequestOps(), []);
-  const [expandedMenu, setExpandedMenu] = React.useState<string | null>(null);
-  const [activeSubItem, setActiveSubItem] = React.useState<string>("");
+  const [expandedMenu, setExpandedMenu] = React.useState<string | null>(
+    "requesterDashboard",
+  );
+  const [activeTab, setActiveTab] = React.useState<RequesterTab>("MyRequest");
   const [isLoading, setIsLoading] = React.useState(false);
   const [dashboardData, setDashboardData] = React.useState<
     IChangeRequestItem[]
@@ -20,7 +33,6 @@ const Dashboard: React.FC<INbcProps> = (props) => {
   const [searchText, setSearchText] = React.useState("");
   const [requestNoFilter, setRequestNoFilter] = React.useState("All");
   const [requestTypeFilter, setRequestTypeFilter] = React.useState("All");
-  const [statusFilter, setStatusFilter] = React.useState("All");
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
 
@@ -28,8 +40,9 @@ const Dashboard: React.FC<INbcProps> = (props) => {
     setExpandedMenu((prev) => (prev === menu ? null : menu));
   };
 
-  const handleSubItemClick = (menu: string, subItem: string): void => {
-    setActiveSubItem(`${menu}-${subItem}`);
+  const handleTabClick = (tab: RequesterTab): void => {
+    setActiveTab(tab);
+    setCurrentPage(1);
   };
 
   const getDashboardData = async (): Promise<void> => {
@@ -61,6 +74,20 @@ const Dashboard: React.FC<INbcProps> = (props) => {
     }
   }, [props.userEmail]);
 
+  const tabFilteredData = React.useMemo(() => {
+    if (activeTab === "MyRequest") {
+      return dashboardData.filter(
+        (item) => item.Status !== "Approved" && item.Status !== "Reject",
+      );
+    }
+
+    if (activeTab === "Approved") {
+      return dashboardData.filter((item) => item.Status === "Approved");
+    }
+
+    return dashboardData.filter((item) => item.Status === "Reject");
+  }, [dashboardData, activeTab]);
+
   const requestNoOptions = React.useMemo(() => {
     const uniqueNos = Array.from(
       new Set(dashboardData.map((item) => item.RequestNo).filter(Boolean)),
@@ -70,7 +97,7 @@ const Dashboard: React.FC<INbcProps> = (props) => {
   }, [dashboardData]);
 
   const filteredData = React.useMemo(() => {
-    let data = [...dashboardData];
+    let data = [...tabFilteredData];
 
     if (requestNoFilter !== "All") {
       data = data.filter((item) => item.RequestNo === requestNoFilter);
@@ -78,10 +105,6 @@ const Dashboard: React.FC<INbcProps> = (props) => {
 
     if (requestTypeFilter !== "All") {
       data = data.filter((item) => item.RequestType === requestTypeFilter);
-    }
-
-    if (statusFilter !== "All") {
-      data = data.filter((item) => item.Status === statusFilter);
     }
 
     if (searchText.trim()) {
@@ -98,17 +121,11 @@ const Dashboard: React.FC<INbcProps> = (props) => {
     }
 
     return data;
-  }, [
-    dashboardData,
-    requestNoFilter,
-    requestTypeFilter,
-    statusFilter,
-    searchText,
-  ]);
+  }, [tabFilteredData, requestNoFilter, requestTypeFilter, searchText]);
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchText, requestNoFilter, requestTypeFilter, statusFilter]);
+  }, [searchText, requestNoFilter, requestTypeFilter, activeTab]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
   const paginatedData = filteredData.slice(
@@ -137,7 +154,7 @@ const Dashboard: React.FC<INbcProps> = (props) => {
     <section className="dashboard-wrapper">
       {isLoading && (
         <div className="black-loader-overlay">
-          <div className="black-spinner" />
+          <div className="loader" />
         </div>
       )}
 
@@ -150,26 +167,36 @@ const Dashboard: React.FC<INbcProps> = (props) => {
           <div className="sidebar-item-group">
             <div
               className="sidebar-item"
-              onClick={() => toggleMenu("myRequest")}
+              onClick={() => toggleMenu("requesterDashboard")}
             >
-              <span>My Request</span>
+              <span>Requester Dashboard</span>
               <FontAwesomeIcon
-                icon={expandedMenu === "myRequest" ? faChevronDown : faChevronRight}
+                icon={
+                  expandedMenu === "requesterDashboard"
+                    ? faChevronDown
+                    : faChevronRight
+                }
                 className="sidebar-caret"
               />
             </div>
 
-            {expandedMenu === "myRequest" && (
+            {expandedMenu === "requesterDashboard" && (
               <div className="sidebar-submenu">
                 <div
-                  className={`sidebar-subitem ${activeSubItem === "myRequest-approved" ? "active-tab" : ""}`}
-                  onClick={() => handleSubItemClick("myRequest", "approved")}
+                  className={`sidebar-subitem ${activeTab === "MyRequest" ? "active-tab" : ""}`}
+                  onClick={() => handleTabClick("MyRequest")}
+                >
+                  My Request
+                </div>
+                <div
+                  className={`sidebar-subitem ${activeTab === "Approved" ? "active-tab" : ""}`}
+                  onClick={() => handleTabClick("Approved")}
                 >
                   Approved
                 </div>
                 <div
-                  className={`sidebar-subitem ${activeSubItem === "myRequest-rejected" ? "active-tab" : ""}`}
-                  onClick={() => handleSubItemClick("myRequest", "rejected")}
+                  className={`sidebar-subitem ${activeTab === "Rejected" ? "active-tab" : ""}`}
+                  onClick={() => handleTabClick("Rejected")}
                 >
                   Rejected
                 </div>
@@ -180,10 +207,41 @@ const Dashboard: React.FC<INbcProps> = (props) => {
           <div className="sidebar-item-group">
             <div
               className="sidebar-item"
-              onClick={() => history.push("/ApprovalDashboard")}
+              onClick={() => toggleMenu("approverDashboard")}
             >
-              <span>Approval Dashboard</span>
+              <span>Approver Dashboard</span>
+              <FontAwesomeIcon
+                icon={
+                  expandedMenu === "approverDashboard"
+                    ? faChevronDown
+                    : faChevronRight
+                }
+                className="sidebar-caret"
+              />
             </div>
+
+            {expandedMenu === "approverDashboard" && (
+              <div className="sidebar-submenu">
+                <div
+                  className="sidebar-subitem"
+                  onClick={() => history.push("/ApprovalDashboard")}
+                >
+                  Pending Request
+                </div>
+                <div
+                  className="sidebar-subitem"
+                  onClick={() => history.push("/ApprovalDashboard")}
+                >
+                  Approved
+                </div>
+                <div
+                  className="sidebar-subitem"
+                  onClick={() => history.push("/ApprovalDashboard")}
+                >
+                  Rejected
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -239,20 +297,6 @@ const Dashboard: React.FC<INbcProps> = (props) => {
                 <option value="New Development">New Development</option>
                 <option value="Existing">Existing</option>
               </select>
-
-              <select
-                className="dashboard-select"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="All">Status</option>
-                <option value="Save as Draft">Save as Draft</option>
-                <option value="Pending for Approval">
-                  Pending for Approval
-                </option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
             </div>
 
             <div className="filter-right">
@@ -263,13 +307,15 @@ const Dashboard: React.FC<INbcProps> = (props) => {
                 onChange={(e) => setSearchText(e.target.value)}
               />
 
-              <button
-                className="new-po-btn"
-                onClick={() => history.push("/NewRequest")}
-              >
-                <FontAwesomeIcon icon={faPlus} />
-                <span>New Change Request</span>
-              </button>
+              {activeTab === "MyRequest" && (
+                <button
+                  className="new-po-btn"
+                  onClick={() => history.push("/NewRequest")}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                  <span>New Change Request</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -322,17 +368,18 @@ const Dashboard: React.FC<INbcProps> = (props) => {
                               <FontAwesomeIcon icon={faEye} />
                             </button>
 
-                            {item.Status !== "Pending for Approval" && (
-                              <button
-                                className="action-btn edit-btn"
-                                title="Edit"
-                                onClick={() =>
-                                  history.push(`/EditRequest/${item.Id}`)
-                                }
-                              >
-                                <FontAwesomeIcon icon={faPenSquare} />
-                              </button>
-                            )}
+                            {activeTab === "MyRequest" &&
+                              item.Status !== "Pending for Approval" && (
+                                <button
+                                  className="action-btn edit-btn"
+                                  title="Edit"
+                                  onClick={() =>
+                                    history.push(`/EditRequest/${item.Id}`)
+                                  }
+                                >
+                                  <FontAwesomeIcon icon={faPenSquare} />
+                                </button>
+                              )}
                           </div>
                         </td>
                       </tr>
