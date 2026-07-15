@@ -527,7 +527,7 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
       const updatedHistory = [
         ...workflowHistory,
         {
-          CurrentApprover: requestData.RequestedBy,
+          CurrentApprover: props.userDisplayName,
           ActionTaken: "Send Back",
           Comment: approverRemarks,
           Date: new Date().toISOString(),
