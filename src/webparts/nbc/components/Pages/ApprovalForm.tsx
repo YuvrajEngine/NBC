@@ -503,11 +503,11 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
     }
 
     const confirmResult = await Swal.fire({
-      title: "Send Back Request?",
-      text: `Send ${requestData.RequestNo} back to the requestor?`,
+      title: "Sent Back Request?",
+      text: `Sent ${requestData.RequestNo} back to the requestor?`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Send Back",
+      confirmButtonText: "Sent Back",
     });
 
     if (!confirmResult.isConfirmed) {
@@ -528,17 +528,17 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
         ...workflowHistory,
         {
           CurrentApprover: props.userDisplayName,
-          ActionTaken: "Send Back",
+          ActionTaken: "Sent Back",
           Comment: approverRemarks,
           Date: new Date().toISOString(),
-          CurrentStatus: "Send Back",
+          CurrentStatus: "Sent Back",
         },
       ];
 
       await changeRequestOps.updateChangeRequest(
         requestData.Id as number,
         {
-          Status: "Send Back",
+          Status: "Sent Back",
           CurrentApproverId: rmApproverId,
           ApprovalMatrix: JSON.stringify(resetMatrix),
           WorkflowHistory: JSON.stringify(updatedHistory),
@@ -549,17 +549,17 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
 
       Swal.fire({
         title: "Sent Back",
-        text: "Request sent back to the requestor.",
+        text: "Request Sent Back to the Requestor.",
         icon: "success",
       }).then(() => {
         history.push("/ApprovalDashboard");
       });
     } catch (error) {
-      console.error("Send back error:", error);
+      console.error("Sent Back error:", error);
 
       Swal.fire({
         title: "Error",
-        text: "Failed to send back the request.",
+        text: "Failed to Sent Back the request.",
         icon: "error",
       });
     } finally {
@@ -759,15 +759,6 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
               </div>
 
               <div className="requestor-field col-span-2">
-                <label>Remarks</label>
-                <textarea
-                  className="remarks-textarea"
-                  value={isLoading ? "Loading..." : requestData?.Remarks || ""}
-                  disabled
-                />
-              </div>
-
-              <div className="requestor-field col-span-2">
                 <label>
                   Approver Remarks
                   <span className="required">*</span>
@@ -844,7 +835,7 @@ const ApprovalForm: React.FC<INbcProps> = (props) => {
               onClick={handleSendBack}
               disabled={isSaving || isLoading}
             >
-              {isSaving ? "Processing..." : "Send Back"}
+              {isSaving ? "Processing..." : "Sent Back"}
             </button>
 
             <button

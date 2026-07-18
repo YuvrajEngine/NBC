@@ -1,7 +1,13 @@
 import * as React from "react";
 import { useHistory } from "react-router-dom";
 import Swal from "sweetalert2";
-import { faPaperclip } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPaperclip,
+  faFileAlt,
+  faChevronDown,
+  faChevronUp,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { INbcProps } from "../INbcProps";
 import logoPrimary from "../../assets/Images/NBC_LOGO.png";
@@ -30,6 +36,7 @@ const NewRequest: React.FC<INbcProps> = (props) => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isRequestorValid, setIsRequestorValid] = React.useState(true);
+  const [isAttachmentsOpen, setIsAttachmentsOpen] = React.useState(false);
 
   const [employeeData, setEmployeeData] = React.useState({
     EmployeeName: "",
@@ -184,9 +191,20 @@ const NewRequest: React.FC<INbcProps> = (props) => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     if (e.target.files && e.target.files.length > 0) {
-      setSupportingFiles(Array.from(e.target.files));
+      setSupportingFiles((prev) => [
+        ...prev,
+        ...Array.from(e.target.files as FileList),
+      ]);
     }
   };
+
+  const handleRemoveFile = (fileName: string): void => {
+    setSupportingFiles((prev) =>
+      prev.filter((file) => file.name !== fileName),
+    );
+  };
+
+  const toggleAttachments = (): void => setIsAttachmentsOpen((prev) => !prev);
 
   const buildPayload = (
     isDraft: boolean,
@@ -598,8 +616,48 @@ const NewRequest: React.FC<INbcProps> = (props) => {
                     <FontAwesomeIcon icon={faPaperclip} /> Supporting Document
                   </span>
                 </label>
+
                 <div className="file-field">
                   <input type="file" multiple onChange={handleFileChange} />
+                </div>
+
+                <div className="attachments-dropdown">
+                  <button
+                    type="button"
+                    className="attachments-toggle"
+                    onClick={toggleAttachments}
+                  >
+                    <span>
+                      {`${supportingFiles.length} Attachment${
+                        supportingFiles.length === 1 ? "" : "s"
+                      }`}
+                    </span>
+                    <FontAwesomeIcon
+                      icon={isAttachmentsOpen ? faChevronUp : faChevronDown}
+                    />
+                  </button>
+
+                  {isAttachmentsOpen && (
+                    <div className="attachments-panel">
+                      {supportingFiles.length === 0 ? (
+                        <div className="attachments-empty">No attachments</div>
+                      ) : (
+                        <ul className="saved-files-list">
+                          {supportingFiles.map((file) => (
+                            <li key={file.name}>
+                              <FontAwesomeIcon icon={faFileAlt} />
+                              <span>{file.name}</span>
+                              <FontAwesomeIcon
+                                icon={faTimes}
+                                className="remove-file-icon"
+                                onClick={() => handleRemoveFile(file.name)}
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

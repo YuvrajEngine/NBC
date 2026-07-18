@@ -188,7 +188,7 @@ const EditRequest: React.FC<INbcProps> = (props) => {
     const normalize = (s?: string): string => (s || "").trim().toLowerCase();
     const normalizedStatus = normalize(overallStatus);
 
-    if (normalizedStatus === "save as draft" || normalizedStatus === "send back") {
+    if (normalizedStatus === "save as draft" || normalizedStatus === "sent back") {
       return {
         initiatorState: "current",
         approverStates: approvers.map(() => "pending"),
@@ -500,9 +500,12 @@ const EditRequest: React.FC<INbcProps> = (props) => {
     };
 
     if (!isDraft) {
+      const wasSentBack =
+        (requestData?.Status || "").trim().toLowerCase() === "sent back";
+
       const newEntry: IWorkflowHistoryItem = {
         CurrentApprover: requestData?.RequestedBy || props.userDisplayName,
-        ActionTaken: "Request Submitted",
+        ActionTaken: wasSentBack ? "Request Resubmitted" : "Request Submitted",
         Comment: changeRequestData.Remarks,
         Date: new Date().toISOString(),
         CurrentStatus: "Pending for Approval",
